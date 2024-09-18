@@ -207,6 +207,15 @@ Call_1_SOURCE_DIR:STATIC=/Users/mofefagade/CLionProjects/Call_1
 //No help, variable specified on the command line.
 Python3_EXECUTABLE:UNINITIALIZED=/Users/mofefagade/anaconda3/bin/python
 
+//Value Computed by CMake
+Python_C_BINARY_DIR:STATIC=/Users/mofefagade/CLionProjects/Call_1/cmake-build-debug
+
+//Value Computed by CMake
+Python_C_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+Python_C_SOURCE_DIR:STATIC=/Users/mofefagade/CLionProjects/Call_1
+
 //No help, variable specified on the command line.
 Python_EXECUTABLE:UNINITIALIZED=/Users/mofefagade/anaconda3/bin/python
 
@@ -336,4 +345,25 @@ CMAKE_TAPI-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+//Details about finding Python3
+FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[/Users/mofefagade/anaconda3/bin/python][/Users/mofefagade/anaconda3/include/python3.11][/Users/mofefagade/anaconda3/lib/libpython3.11.dylib][/Users/mofefagade/anaconda3/lib/python3.11/site-packages/numpy/core/include][cfound components: Interpreter Development NumPy Development.Module Development.Embed ][v3.11.4()]
+//Compiler reason failure
+_Python3_Compiler_REASON_FAILURE:INTERNAL=
+_Python3_DEVELOPMENT_EMBED_SIGNATURE:INTERNAL=55ff96483f1129ad2954e56351ddaaf9
+_Python3_DEVELOPMENT_MODULE_SIGNATURE:INTERNAL=1d2ea3991e118bbe7c5492fba5cee3b8
+//Development reason failure
+_Python3_Development_REASON_FAILURE:INTERNAL=
+_Python3_EXECUTABLE:INTERNAL=/Users/mofefagade/anaconda3/bin/python
+//Path to a file.
+_Python3_INCLUDE_DIR:INTERNAL=/Users/mofefagade/anaconda3/include/python3.11
+//Python3 Properties
+_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;11;4;64;;cpython-311-darwin;abi3;/Users/mofefagade/anaconda3/lib/python3.11;/Users/mofefagade/anaconda3/lib/python3.11;/Users/mofefagade/anaconda3/lib/python3.11/site-packages;/Users/mofefagade/anaconda3/lib/python3.11/site-packages
+_Python3_INTERPRETER_SIGNATURE:INTERNAL=96c6437c97ac6847bcd891ac3d6ddf60
+//Interpreter reason failure
+_Python3_Interpreter_REASON_FAILURE:INTERNAL=
+//Path to a library.
+_Python3_LIBRARY_RELEASE:INTERNAL=/Users/mofefagade/anaconda3/lib/libpython3.11.dylib
+_Python3_NUMPY_SIGNATURE:INTERNAL=270c49f52e783ccd19aee4c87b58587e
+//Path to a file.
+_Python3_NumPy_INCLUDE_DIR:INTERNAL=/Users/mofefagade/anaconda3/lib/python3.11/site-packages/numpy/core/include
 

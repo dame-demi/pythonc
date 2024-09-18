@@ -5,7 +5,7 @@ int main() {
     Py_Initialize();
 
     // Add the current directory to the Python path
-    PyRun_SimpleString("import sys; sys.path.append('.')");
+    PyRun_SimpleString("import sys; sys.path.append('/Users/mofefagade/CLionProjects/Call_1')");
 
     // Import the Python module 'mytest'
     PyRun_SimpleString("import mytest");
