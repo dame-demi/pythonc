@@ -1,0 +1,17 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/usr/bin/make -G "Unix Makefiles" -DPython_EXECUTABLE=/Users/mofefagade/anaconda3/bin/python -DPython3_EXECUTABLE=/Users/mofefagade/anaconda3/bin/python -S /Users/mofefagade/CLionProjects/Call_1 -B /Users/mofefagade/CLionProjects/Call_1/cmake-build-debug
+-- The C compiler identification is AppleClang 15.0.0.15000309
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /Library/Developer/CommandLineTools/usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Configuring done (0.8s)
+-- Generating done (0.0s)
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    Python3_EXECUTABLE
+    Python_EXECUTABLE
+
+
+-- Build files have been written to: /Users/mofefagade/CLionProjects/Call_1/cmake-build-debug
