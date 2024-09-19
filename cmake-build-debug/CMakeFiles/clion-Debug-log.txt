@@ -1,4 +1,0 @@
-/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/usr/bin/make -G "Unix Makefiles" -DPython_EXECUTABLE=/Users/mofefagade/anaconda3/bin/python -DPython3_EXECUTABLE=/Users/mofefagade/anaconda3/bin/python -S /Users/mofefagade/CLionProjects/Call_1 -B /Users/mofefagade/CLionProjects/Call_1/cmake-build-debug
--- Configuring done (0.6s)
--- Generating done (0.0s)
--- Build files have been written to: /Users/mofefagade/CLionProjects/Call_1/cmake-build-debug

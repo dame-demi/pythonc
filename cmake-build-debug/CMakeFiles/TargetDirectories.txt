@@ -1,3 +1,0 @@
-/Users/mofefagade/CLionProjects/Call_1/cmake-build-debug/CMakeFiles/Call_1.dir
-/Users/mofefagade/CLionProjects/Call_1/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/mofefagade/CLionProjects/Call_1/cmake-build-debug/CMakeFiles/rebuild_cache.dir
