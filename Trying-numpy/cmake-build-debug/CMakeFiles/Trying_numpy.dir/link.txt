@@ -1,0 +1,1 @@
+/Library/Developer/CommandLineTools/usr/bin/cc -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/Trying_numpy.dir/main.c.o -o Trying_numpy  -Wl,-rpath,/Users/mofefagade/anaconda3/lib /Users/mofefagade/anaconda3/lib/libpython3.11.dylib
