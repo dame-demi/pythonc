@@ -15,7 +15,8 @@ set(SUNDIALS_DIR "/home/tony/Downloads/instdir/lib/cmake/sundials")
 find_package(SUNDIALS 7.1.0 REQUIRED)
 
 # Find the math library
-find_library(MATH_LIBRARY m)
+# find_library(MATH_LIBRARY m)
 
 # Link the SUNDIALS libraries
-target_link_libraries(untitled2 PUBLIC SUNDIALS::nvecserial SUNDIALS::core SUNDIALS::sunmatrixdense SUNDIALS::sunmatrixband SUNDIALS::sunlinsoldense SUNDIALS::sunlinsolband SUNDIALS::cvode ${MATH_LIBRARY})
+target_link_libraries(untitled2 PUBLIC SUNDIALS::nvecserial SUNDIALS::core SUNDIALS::sunmatrixdense SUNDIALS::sunmatrixband SUNDIALS::sunlinsoldense SUNDIALS::sunlinsolband SUNDIALS::cvode)
+#  ${MATH_LIBRARY} (don't really need this if there are no math functions (like sum) in the code)

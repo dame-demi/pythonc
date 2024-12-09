@@ -87,28 +87,36 @@
 
 /* Shared Problem Constants */
 
-#define ATOL SUN_RCONST(1.0e-6)
-#define RTOL SUN_RCONST(0.0)
+#define ATOL SUN_RCONST(1.0e-12)
+#define RTOL SUN_RCONST(1.0e-4)
 
 #define ZERO   SUN_RCONST(0.0)
 #define ONE    SUN_RCONST(1.0)
 #define TWO    SUN_RCONST(2.0)
-#define THREE    SUN_RCONST(3.0)
-#define FOUR    SUN_RCONST(4.0)
-#define EIGHT    SUN_RCONST(8.0)
-#define THIRTY SUN_RCONST(30.0)
+#define THREE  SUN_RCONST(3.0)
+#define FOUR   SUN_RCONST(4.0)
+#define EIGHT  SUN_RCONST(8.0)
 
 /* Problem #1 Constants */
 
 #define P1_NEQ        2
 #define P1_ETA        SUN_RCONST(3.0)
-#define P1_NOUT       6
+#define P1_NOUT       50
 #define P1_T0         SUN_RCONST(0.0)
-#define P1_T1         SUN_RCONST(1.39283880203)
-#define P1_DTOUT      SUN_RCONST(2.214773875)
-#define P1_TOL_FACTOR SUN_RCONST(1.0e4)
+#define P1_T1         SUN_RCONST(0.1)
+#define P1_DTOUT      SUN_RCONST(0.2)
+#define P1_TOL_FACTOR SUN_RCONST(1.0e7)
 #define P1_RBInit     SUN_RCONST(0.0215e-6)
 #define P1_RBDotInit  SUN_RCONST(0.1)
+#define P1_CL         SUN_RCONST(1300)
+#define P1_Pv         SUN_RCONST(1160000)
+#define P1_pAmbient   SUN_RCONST(116000)
+#define P1_sigma      SUN_RCONST(0.25)
+#define P1_Pr         SUN_RCONST(0.71)
+#define P1_Pr0        SUN_RCONST(0.71)
+#define P1_mu         SUN_RCONST(0.24e-3)
+#define P1_kappa      SUN_RCONST(0.1)
+#define P1_rho        SUN_RCONST(595.59)
 
 /* Linear Solver Options */
 
@@ -271,8 +279,8 @@ static int Problem1(void)
   for (miter = FUNC; miter <= DIAG; miter++)
   {
     ero            = ZERO;
-    NV_Ith_S(y, 0) = TWO;
-    NV_Ith_S(y, 1) = ZERO;
+    NV_Ith_S(y, 0) = P1_RBInit;
+    NV_Ith_S(y, 1) = P1_RBDotInit;
 
     firstrun = (miter == FUNC);
     if (firstrun)
@@ -379,7 +387,7 @@ static int f1(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data)
   y1 = NV_Ith_S(y, 1);
 
   NV_Ith_S(ydot, 0) = y1;
-  NV_Ith_S(ydot, 1) = (ONE - SQR(y0)) * P1_ETA * y1 - y0;
+  NV_Ith_S(ydot, 1) = (ONE + y1/P1_CL) * (P1_Pv+(P1_Pr0+TWO*P1_sigma/P1_RBInit)*CUB(P1_RBInit/y0)-TWO*P1_sigma/y0-FOUR*P1_mu*y1/y0-FOUR*P1_kappa*y1/SQR(y0)-P1_Pr)/P1_rho + y0*(ONE/(P1_CL*P1_rho))*(-THREE*CUB(P1_RBInit/y0)*(P1_Pr0+ TWO *P1_sigma/P1_RBInit)*(y1/y0)+TWO*P1_sigma*y1/SQR(y0)+EIGHT*P1_kappa*SQR(y1)/CUB(y0))-(ONE-y1/(THREE*P1_CL))*(THREE*SQR(y1)/TWO);
 
   return (0);
 }
