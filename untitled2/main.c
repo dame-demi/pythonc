@@ -387,7 +387,7 @@ static int f1(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data)
   y1 = NV_Ith_S(y, 1);
 
   NV_Ith_S(ydot, 0) = y1;
-  NV_Ith_S(ydot, 1) = (ONE + y1/P1_CL) * (P1_Pv+(P1_Pr0+TWO*P1_sigma/P1_RBInit)*CUB(P1_RBInit/y0)-TWO*P1_sigma/y0-FOUR*P1_mu*y1/y0-FOUR*P1_kappa*y1/SQR(y0)-P1_Pr)/P1_rho + y0*(ONE/(P1_CL*P1_rho))*(-THREE*CUB(P1_RBInit/y0)*(P1_Pr0+ TWO *P1_sigma/P1_RBInit)*(y1/y0)+TWO*P1_sigma*y1/SQR(y0)+EIGHT*P1_kappa*SQR(y1)/CUB(y0))-(ONE-y1/(THREE*P1_CL))*(THREE*SQR(y1)/TWO);
+  NV_Ith_S(ydot, 1) = ((ONE + y1/P1_CL) * (P1_Pv+(P1_Pr0+TWO*P1_sigma/P1_RBInit)*CUB(P1_RBInit/y0)-TWO*P1_sigma/y0-FOUR*P1_mu*y1/y0-FOUR*P1_kappa*y1/SQR(y0)-P1_Pr)/P1_rho + y0*(ONE/(P1_CL*P1_rho)) * (-THREE*CUB(P1_RBInit/y0) * (P1_Pr0 + TWO*P1_sigma/P1_RBInit) * (y1/y0) + TWO*P1_sigma*y1/SQR(y0) + FOUR*P1_mu*SQR(y1)/SQR(y0) + EIGHT*P1_kappa*SQR(y1)/CUB(y0)) - (ONE-y1/(THREE*P1_CL))*(THREE*SQR(y1)/TWO))/((ONE-y1/P1_CL)*y0 + y0*(ONE/(P1_CL*P1_rho)) * (FOUR*P1_mu/y0 + FOUR*P1_kappa/SQR(y0)));
 
   return (0);
 }
