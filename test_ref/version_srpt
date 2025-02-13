@@ -1,0 +1,11 @@
+LIBFOO_1.0 {
+
+  global:
+
+    _convergeudf*;
+
+  local:
+
+    *;
+
+};
