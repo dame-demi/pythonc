@@ -705,7 +705,7 @@ CONVERGE_UDF(spray_kh,
          // using Converge variables for the thermal breakup implementation
          P1_T0 = 0.0; // initial start time for ODE
          P1_T1 = 1.5e-7; // initial output time from ODE
-         P1_DTOUT = reduced_dt; // Using reduced time step for ODE iteration
+         P1_DTOUT = dt; // Using reduced time step for ODE iteration
          P1_TOL_FACTOR = 1.0e10; // Tolerance factor to check how much the error exceeds the tolerance factor
          P1_RBInit = 0.0215e1; // Initial radius of the bubble
          P1_RBDotInit = 0.1; // Initial radius growth rate of the bubble
@@ -718,11 +718,9 @@ CONVERGE_UDF(spray_kh,
          P1_mu = fuel_visc; // Dynamic viscosity of the liquid
          P1_kappa = fuel_cond; // Thermal conductivity of the liquid
          P1_rho = fuel_den;; // Density of the liquid
+         sunrealtype y0_array[P1_NOUT];  // Array to store y1 values
 
-         for (int iter = 0; iter < therm_iter; iter++) {
             // start of thermal breakup implementation
-
-            sunrealtype y0_array[P1_NOUT];  // Array to store y1 values
 
             Problem1(y0_array);
 
@@ -730,11 +728,6 @@ CONVERGE_UDF(spray_kh,
             for (int i = 0; i < P1_NOUT; i++) {
                original_y0_array[i] = y0_array[i];
             }
-
-            // // Print the original and new values for comparison while troubleshooting
-            // for (int i = 0; i < P1_NOUT; i++) {
-            //    printf("original_y0_array[%d] = %12.5e, y0_array[%d] = %12.5e\n", i, original_y0_array[i], i, y0_array[i]);
-            // }
 
             // Print the original and new values for comparison while troubleshooting
             for (int i = 0; i < P1_NOUT; i++) {
@@ -751,7 +744,12 @@ CONVERGE_UDF(spray_kh,
             if (Fp > Fs) {
                // Breakup occurs
                new_radius_thermal = cbrt(0.5 * (parcel_cloud.radius[passed_parcel_idx] - radius_bubble)); // New radius
-               printf ("Thermal breakup happens \n");
+               // new_radius_thermal = fmax(new_radius_thermal, 1.0e-20);
+               old_num_drop = parcel_cloud.num_drop[passed_parcel_idx];
+               parcel_cloud.num_drop[passed_parcel_idx] =
+                  old_num_drop * parcel_cloud.radius[passed_parcel_idx] * parcel_cloud.radius[passed_parcel_idx] *
+                  parcel_cloud.radius[passed_parcel_idx] / (new_radius_thermal * new_radius_thermal * new_radius_thermal);
+               printf ("Thermal breakup worked and updated parcel properties! \n");
             }else {
                // No breakup occurs, handle accordingly
                new_radius_thermal = parcel_cloud.radius[passed_parcel_idx]; // Keep the original radius
@@ -759,8 +757,8 @@ CONVERGE_UDF(spray_kh,
             }
 
             // Use new_radius_thermal in the original KH loop
-            new_radius = (new_radius_thermal + (reduced_dt / breakup_time) * radius_equil) / (1.0 + (reduced_dt / breakup_time));
-         }
+            new_radius = (new_radius_thermal + (dt / breakup_time) * radius_equil) / (1.0 + (dt / breakup_time));
+
             /*
             new_radius =
                (parcel_cloud.radius[passed_parcel_idx] + (dt / breakup_time) * radius_equil) / (1.0 + (dt / breakup_time));
@@ -864,7 +862,7 @@ CONVERGE_UDF(spray_kh,
             parcel_cloud.radius_tm1[passed_parcel_idx]    = parcel_cloud.radius[passed_parcel_idx];
             parcel_cloud.shed_num_drop[passed_parcel_idx] = 0.0;
             parcel_cloud.shed_mass[passed_parcel_idx] =
-               parcel_cloud.shed_mass[passed_parcel_idx] - (CONVERGE_precision_t)(num_kh)*new_parcel_mass;
+            parcel_cloud.shed_mass[passed_parcel_idx] - (CONVERGE_precision_t)(num_kh)*new_parcel_mass;
 
             //parent parcel's density has not changed, so updating sactive based on volume scaling
             parcel_cloud.sactive[passed_parcel_idx] =
