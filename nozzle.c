@@ -78,7 +78,7 @@ CONVERGE_UDF(nozzle,
    CONVERGE_injector_t injector = CONVERGE_get_injector_with_id(passed_injector_index);
    CONVERGE_nozzle_t nozzle     = CONVERGE_injector_get_nozzle_with_id(injector, passed_nozzle_index);
    CONVERGE_precision_t temp    = CONVERGE_injector_get_parameter_precision(injector, INJECTOR_INJECT_TEMP);
-   CONVERGE_precision_t *mfrac  = malloc(sizeof(CONVERGE_precision_t));
+   CONVERGE_precision_t *mfrac  = (CONVERGE_precision_t *)malloc(sizeof(CONVERGE_precision_t));
    CONVERGE_injector_get_mass_fraction(injector, mfrac);
 
    for(CONVERGE_index_t isp = 0; isp < num_parcel_species; isp++)
@@ -96,16 +96,15 @@ CONVERGE_UDF(nozzle,
    // following assumes that c_v=1.0
 
    CONVERGE_precision_t area_coeff = CONVERGE_injector_get_parameter_precision(injector, INJECTOR_DISCHARGE_COEFF);
-   CONVERGE_precision_t injected_mass = CONVERGE_injector_get_parameter_precision(injector, INJECTOR_INJECT_MASS); // line by James
-   CONVERGE_precision_t injector_duration = CONVERGE_injector_get_parameter_precision(injector, INJECTOR_INJECT_DURATION); // line by James
-   mdot = injected_mass/injector_duration; // line by James
-
+   CONVERGE_precision_t injected_mass = CONVERGE_injector_get_parameter_precision(injector, INJECTOR_INJECT_MASS);
+   CONVERGE_precision_t injector_duration = CONVERGE_injector_get_parameter_precision(injector, INJECTOR_INJECT_DURATION);
+   mdot = injected_mass/injector_duration;
    if(area_coeff > 1.0)
       area_coeff = 1.0;
    *passed_velocity_eff = (*passed_velocity_eff) / area_coeff;
 
    CONVERGE_precision_t area_noz = CONVERGE_nozzle_get_parameter_precision(nozzle, NOZZLE_AREA);
-   CONVERGE_precision_t noz_len = CONVERGE_nozzle_get_parameter_precision(nozzle, NOZZLE_LENGTH); // line by James
+   CONVERGE_precision_t noz_len = CONVERGE_nozzle_get_parameter_precision(nozzle, NOZZLE_LENGTH);
 
    *passed_diameter_eff = 2.0 * sqrt((area_noz * area_coeff) / PI);
 
@@ -114,7 +113,7 @@ CONVERGE_UDF(nozzle,
    printf ("nozzle.c den_liq = %g pvap_liq = %g  hvap_liq = %g surf_liq = %g\n", den_liq, pvap_liq, hvap_liq, surf_liq);
    //CONVERGE_precision_t cone_angle = CONVERGE_nozzle_get_parameter_precision(nozzle, NOZZLE_CONE_ANGLE);
 
-   // Calculate increased cone angle due to flashing - From Price model. Equation references from Star CCM+ manual
+// Calculate increased cone angle due to flashing - From Price model. Equation references from Star CCM+ manual
 
    CONVERGE_precision_t a_0, v_l, big_theta, k_b, R_p, beta, jam_a, jam_b, jam_c, u, bulk_mod, c_vel;
 
