@@ -1,3 +1,4 @@
+
 /*******************************************************************************
 * CONVERGENT SCIENCE CONFIDENTIAL                                              *
 * All rights reserved.                                                         *
@@ -8,7 +9,6 @@
 * is strictly forbidden unless prior written permission is obtained from       *
 * Convergent Science.                                                          *
 *******************************************************************************/
-
 #include "lagrangian/env.h"
 #include <CONVERGE/udf.h>
 #include <math.h>
@@ -26,7 +26,6 @@
 #include "/home/tony/Downloads/instdir/include/sunnonlinsol/sunnonlinsol_fixedpoint.h" /* access to dense SUNMatrix            */
 #include "/home/tony/Downloads/instdir/include/sunnonlinsol/sunnonlinsol_newton.h" /* access to dense SUNMatrix */
 #include "user_header.h"
-
 /**********************************************************************/
 /*                                                                    */
 /* Name: user_kh                                                      */
@@ -36,42 +35,31 @@
 /* Called when: user_kh_flag=1 in udf.in                              */
 /*                                                                    */
 /**********************************************************************/
-
 static void init_tables(CONVERGE_species_t species);
 static void destroy_tables(CONVERGE_species_t species);
 static CONVERGE_table_t *pvap_table = NULL;
-
 /* helpful macros */
-
 #ifndef SQR
 #define SQR(A) ((A) * (A))
 #endif
-
 #ifndef CUB
 #define CUB(A) ((A) * (A) * (A))
 #endif
-
 /* Shared Problem Constants */
-
 #define ATOL SUN_RCONST(1.0e-6)
 #define RTOL SUN_RCONST(1.0e-4)
-
 #define ZERO   SUN_RCONST(0.0)
 #define ONE    SUN_RCONST(1.0)
 #define TWO    SUN_RCONST(2.0)
 #define THREE  SUN_RCONST(3.0)
 #define FOUR   SUN_RCONST(4.0)
 #define EIGHT  SUN_RCONST(8.0)
-
 // Declare the variables for the Sundials ODE
 CONVERGE_precision_t P1_T0, P1_T1, P1_DTOUT, P1_TOL_FACTOR;
 CONVERGE_precision_t P1_RBInit, P1_RBDotInit, P1_CL, P1_Pv, P1_pAmbient, P1_sigma, P1_Pr, P1_Pr0, P1_mu, P1_kappa, P1_rho;
-
 // ODE Variables
-
 #define P1_NEQ        2
 #define P1_NOUT       10
-
 /* Linear Solver Options */
 /* Enum for solver options */
 enum
@@ -82,24 +70,17 @@ enum
    BAND_USER,
    BAND_DQ
  };
-
 /* Private Helper Functions */
-
 static void Problem1(sunrealtype* y1_array);
 static void PrintOutput1(sunrealtype t, sunrealtype y0, sunrealtype y1, int qu, sunrealtype hu, sunrealtype* y1_array, int index);
 static int PrepareNextRun(SUNContext sunctx, void* cvode_mem, int lmm, int miter, N_Vector y, SUNMatrix* A, sunindextype mu, sunindextype ml, SUNLinearSolver* LS, SUNNonlinearSolver* NLS);
 static void PrintErrOutput(sunrealtype tol_factor);
 static void PrintFinalStats(void* cvode_mem, int miter, sunrealtype ero);
 static void PrintErrInfo(int nerr);
-
 /* Functions Called by the Solver */
-
 static int f1(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data);
-
 /* Private function to check function return values */
-
 static int check_retval(void* returnvalue, const char* funcname, int opt);
-
 static void Problem1(sunrealtype* y1_array)
 {
     sunrealtype reltol = RTOL, abstol = ATOL, t, tout, ero, er;
@@ -113,52 +94,39 @@ static void Problem1(sunrealtype* y1_array)
     int qu;
     sunrealtype hu;
     SUNContext sunctx;
-
     y         = NULL;
     A         = NULL;
     LS        = NULL;
     NLS       = NULL;
     cvode_mem = NULL;
-
     /* Create the SUNDIALS context */
     retval = SUNContext_Create(SUN_COMM_NULL, &sunctx);
     if (check_retval(&retval, "SUNContext_Create", 1)) { return; }
-
     y = N_VNew_Serial(P1_NEQ, sunctx);
     if (check_retval((void*)y, "N_VNew_Serial", 0)) { return; }
     /*PrintIntro1();*/
-
     CVodeFree(&cvode_mem);
     SUNNonlinSolFree(NLS);
     NLS = NULL;
     LS  = NULL;
     A   = NULL;
-
     cvode_mem = CVodeCreate(CV_BDF, sunctx);
     if (check_retval((void*)cvode_mem, "CVodeCreate", 0)) { return; }
-
     for (miter = DENSE_DQ; miter <= DENSE_DQ; miter++)
     {
         ero            = ZERO;
         NV_Ith_S(y, 0) = P1_RBInit;
         NV_Ith_S(y, 1) = P1_RBDotInit;
-
         firstrun = (miter == DENSE_DQ);
-
         retval = CVodeInit(cvode_mem, f1, P1_T0, y);
         if (check_retval(&retval, "CVodeInit", 1)) { return; }
-
         retval = CVodeSStolerances(cvode_mem, reltol, abstol);
         if (check_retval(&retval, "CVodeSStolerances", 1)) { return; }
-
         retval = CVodeReInit(cvode_mem, P1_T0, y);
         if (check_retval(&retval, "CVodeReInit", 1)) { return; }
-
         retval = PrepareNextRun(sunctx, cvode_mem, CV_BDF, miter, y, &A, 0, 0, &LS, &NLS);
         if (check_retval(&retval, "PrepareNextRun", 1)) { return; }
-
         /*PrintHeader1();*/
-
         for (iout = 1, tout = P1_T1; iout <= P1_NOUT; iout++, tout += P1_DTOUT)
         {
             retval = CVode(cvode_mem, tout, y, &t, CV_NORMAL);
@@ -184,21 +152,17 @@ static void Problem1(sunrealtype* y1_array)
                 }
             }
         }
-
         /*PrintFinalStats(cvode_mem, miter, ero);*/
     }
-
     CVodeFree(&cvode_mem);
     SUNNonlinSolFree(NLS);
     N_VDestroy(y);
     SUNContext_Free(&sunctx);
 }
-
 static void PrintOutput1(sunrealtype t, sunrealtype y0, sunrealtype y1, int qu, sunrealtype hu, sunrealtype* y1_array, int index)
 {
    // Save y1 into the array at the specified index
    y1_array[index] = y0;
-
 #if defined(SUNDIALS_EXTENDED_PRECISION)
    printf("%10.5Lf    %12.5Le   %12.5Le   %2d    %6.4Le\n", t, y0, y1, qu, hu);
 #elif defined(SUNDIALS_DOUBLE_PRECISION)
@@ -206,17 +170,13 @@ static void PrintOutput1(sunrealtype t, sunrealtype y0, sunrealtype y1, int qu, 
 #else
    printf("%10.5f    %12.5e   %12.5e   %2d    %6.4e\n", t, y0, y1, qu, hu);
 #endif
-
    return;
 }
-
 static int f1(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data)
 {
    sunrealtype y0, y1;
-
    y0 = NV_Ith_S(y, 0);
    y1 = NV_Ith_S(y, 1);
-
    NV_Ith_S(ydot, 0) = y1;
    NV_Ith_S(ydot, 1) = ((ONE + y1 / P1_CL) * (
                           P1_Pv + (P1_Pr0 + TWO * P1_sigma / P1_RBInit) * CUB(P1_RBInit/y0) - TWO * P1_sigma / y0 - FOUR
@@ -227,36 +187,28 @@ static int f1(sunrealtype t, N_Vector y, N_Vector ydot, void* user_data)
                           ONE - y1 / (THREE * P1_CL)) * (THREE * SQR(y1) / TWO)) / (
                          (ONE - y1 / P1_CL) * y0 + y0 * (ONE / (P1_CL * P1_rho)) * (
                            FOUR * P1_mu / y0 + FOUR * P1_kappa / SQR(y0)));
-
    return (0);
 }
-
 static int PrepareNextRun(SUNContext sunctx, void* cvode_mem, int lmm,
                           int miter, N_Vector y, SUNMatrix* A, sunindextype mu,
                           sunindextype ml, SUNLinearSolver* LS,
                           SUNNonlinearSolver* NLS)
 {
   int retval = CV_SUCCESS;
-
   if (*NLS) { SUNNonlinSolFree(*NLS); }
   if (*LS) { SUNLinSolFree(*LS); }
   if (*A) { SUNMatDestroy(*A); }
-
   printf("\n\n-------------------------------------------------------------");
-
   printf("\n\nLinear Multistep Method : ");
   if (lmm == CV_ADAMS) { printf("ADAMS\n"); }
   else { printf("BDF\n"); }
-
   printf("Iteration               : ");
   if (miter == FUNC)
   {
     printf("FIXEDPOINT\n");
-
     /* create fixed point nonlinear solver object */
     *NLS = SUNNonlinSol_FixedPoint(y, 0, sunctx);
     if (check_retval((void*)*NLS, "SUNNonlinSol_FixedPoint", 0)) { return (1); }
-
     /* attach nonlinear solver object to CVode */
     retval = CVodeSetNonlinearSolver(cvode_mem, *NLS);
     if (check_retval(&retval, "CVodeSetNonlinearSolver", 1)) { return (1); }
@@ -264,53 +216,40 @@ static int PrepareNextRun(SUNContext sunctx, void* cvode_mem, int lmm,
   else
   {
     printf("NEWTON\n");
-
     /* create Newton nonlinear solver object */
     *NLS = SUNNonlinSol_Newton(y, sunctx);
     if (check_retval((void*)NLS, "SUNNonlinSol_Newton", 0)) { return (1); }
-
     /* attach nonlinear solver object to CVode */
     retval = CVodeSetNonlinearSolver(cvode_mem, *NLS);
     if (check_retval(&retval, "CVodeSetNonlinearSolver", 1)) { return (1); }
-
     printf("Linear Solver           : ");
-
     switch (miter)
     {
     case DENSE_DQ:
       printf("Dense, Difference Quotient Jacobian\n");
-
       /* Create dense SUNMatrix for use in linear solves */
       *A = SUNDenseMatrix(P1_NEQ, P1_NEQ, sunctx);
       if (check_retval((void*)*A, "SUNDenseMatrix", 0)) { return (1); }
-
       /* Create dense SUNLinearSolver object for use by CVode */
       *LS = SUNLinSol_Dense(y, *A, sunctx);
       if (check_retval((void*)*LS, "SUNLinSol_Dense", 0)) { return (1); }
-
       /* Call CVodeSetLinearSolver to attach the matrix and linear solver to CVode */
       retval = CVodeSetLinearSolver(cvode_mem, *LS, *A);
       if (check_retval(&retval, "CVodeSetLinearSolver", 1)) { return (1); }
-
       /* Use a difference quotient Jacobian */
       retval = CVodeSetJacFn(cvode_mem, NULL);
       if (check_retval(&retval, "CVodeSetJacFn", 1)) { return (1); }
       break;
-
     case DIAG:
       printf("Diagonal Jacobian\n");
-
       /* Call CVDiag to create/attach the CVODE-specific diagonal solver */
       retval = CVDiag(cvode_mem);
       if (check_retval(&retval, "CVDiag", 1)) { return (1); }
       break;
-
     }
   }
-
   return (retval);
 }
-
 static void PrintErrOutput(sunrealtype tol_factor)
 {
 #if defined(SUNDIALS_EXTENDED_PRECISION)
@@ -320,16 +259,13 @@ static void PrintErrOutput(sunrealtype tol_factor)
 #else
    printf("\n\n Error exceeds %g * tolerance \n\n", tol_factor);
 #endif
-
    return;
 }
-
 static void PrintFinalStats(void* cvode_mem, int miter, sunrealtype ero)
 {
   long int lenrw, leniw, lenrwLS, leniwLS;
   long int nst, nfe, nsetups, nni, ncfn, netf, nje, nfeLS;
   int retval;
-
   retval = CVodeGetWorkSpace(cvode_mem, &lenrw, &leniw);
   check_retval(&retval, "CVodeGetWorkSpace", 1);
   retval = CVodeGetNumSteps(cvode_mem, &nst);
@@ -344,7 +280,6 @@ static void PrintFinalStats(void* cvode_mem, int miter, sunrealtype ero)
   check_retval(&retval, "CVodeGetNumNonlinSolvIters", 1);
   retval = CVodeGetNumNonlinSolvConvFails(cvode_mem, &ncfn);
   check_retval(&retval, "CVodeGetNumNonlinSolvConvFails", 1);
-
   printf("\n Final statistics for this run:\n\n");
   printf(" CVode real workspace length              = %4ld \n", lenrw);
   printf(" CVode integer workspace length           = %4ld \n", leniw);
@@ -354,7 +289,6 @@ static void PrintFinalStats(void* cvode_mem, int miter, sunrealtype ero)
   printf(" Number of nonlinear iterations           = %4ld \n", nni);
   printf(" Number of nonlinear convergence failures = %4ld \n", ncfn);
   printf(" Number of error test failures            = %4ld \n\n", netf);
-
   if (miter != FUNC)
   {
     if (miter != DIAG)
@@ -379,27 +313,22 @@ static void PrintFinalStats(void* cvode_mem, int miter, sunrealtype ero)
     printf(" Number of Jacobian evaluations           = %4ld \n", nje);
     printf(" Number of f evals. in linear solver      = %4ld \n\n", nfeLS);
   }
-
 #if defined(SUNDIALS_EXTENDED_PRECISION)
   printf(" Error overrun = %.3Lf \n", ero);
 #else
   printf(" Error overrun = %.3f \n", ero);
 #endif
 }
-
 static void PrintErrInfo(int nerr)
 {
    printf("\n\n-------------------------------------------------------------");
    printf("\n-------------------------------------------------------------");
    printf("\n\n Number of errors encountered = %d \n", nerr);
-
    return;
 }
-
 static int check_retval(void* returnvalue, const char* funcname, int opt)
 {
    int* retval;
-
    /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
    if (opt == 0 && returnvalue == NULL)
    {
@@ -407,7 +336,6 @@ static int check_retval(void* returnvalue, const char* funcname, int opt)
               funcname);
       return (1);
    }
-
    /* Check if retval < 0 */
    else if (opt == 1)
    {
@@ -419,7 +347,6 @@ static int check_retval(void* returnvalue, const char* funcname, int opt)
          return (1);
       }
    }
-
    /* Check if function returned NULL pointer - no memory allocated */
    else if (opt == 2 && returnvalue == NULL)
    {
@@ -427,7 +354,6 @@ static int check_retval(void* returnvalue, const char* funcname, int opt)
               funcname);
       return (1);
    }
-
    return (0);
 }
 
@@ -440,9 +366,7 @@ CONVERGE_UDF(spray_kh,
                 VALUE(CONVERGE_precision_t *, passed_velocity),
                 VALUE(CONVERGE_precision_t *, passed_species_mass_fraction)),
              OUT(CONVERGE_VOID))
-
 {
-   printf ("This is the start of spray kh.c \n");
    struct ParcelCloud parcel_cloud;
    load_user_cloud(&parcel_cloud, passed_spray_cloud);
 
@@ -462,7 +386,7 @@ CONVERGE_UDF(spray_kh,
    CONVERGE_precision_t newparcel_cutoff_parcel, num_drop_tmp;
    CONVERGE_precision_t shed_factor_parcel;
    CONVERGE_precision_t length_kh, length_cav, length_tur;
-   CONVERGE_precision_t time_kh, time_cav, time_tur, time_collapse;
+   CONVERGE_precision_t time_kh, time_cav, time_tur, time_collapse, time_thermal;
    CONVERGE_precision_t radius_cav, coef_area_reduction;
    CONVERGE_precision_t parcel_tke, parcel_eps, parcel_uprime, tke_term1;
    CONVERGE_precision_t time_burst, khact_c_tcav;
@@ -472,13 +396,7 @@ CONVERGE_UDF(spray_kh,
    CONVERGE_index_t it_prop, kh_no_enlarge_flag;
    CONVERGE_precision_t oldparent_radius;
    CONVERGE_precision_t liquid_mass_in_cell;
-   CONVERGE_vec3_t original_y0_array;
-   CONVERGE_precision_t radius_bubble, rMean; // bubble radius and mean radius after thermal breakup
-   CONVERGE_precision_t therm_iter;
-   CONVERGE_precision_t reduced_dt; // reduced time step for breakup model
-   CONVERGE_precision_t Fp, Fs; // pressure force
-   CONVERGE_precision_t new_radius_thermal; // surface tension force
-   bool breakup; // breakup flag
+   CONVERGE_precision_t radius_bubble, Fp, rMean, Fs, Thermal_radius, new_radius_thermal, old_drop, old_radius;
 
    CONVERGE_index_t spray_elsa_flag    = CONVERGE_get_int("lagrangian.elsa_flag");
    CONVERGE_index_t num_gas_species    = CONVERGE_species_num_gas(passed_species);
@@ -510,6 +428,14 @@ CONVERGE_UDF(spray_kh,
 
    drop_nu = parcel_cloud.viscosity[passed_parcel_idx] / parcel_cloud.density[passed_parcel_idx];
    rey_num = (parcel_cloud.radius[passed_parcel_idx] * parcel_cloud.rel_vel_mag[passed_parcel_idx]) / drop_nu;
+
+   printf("parcel viscosity = %.12f\n", parcel_cloud.viscosity[passed_parcel_idx]);
+   printf("parcel density = %.12f\n", parcel_cloud.density[passed_parcel_idx]);
+   printf("parcel surface tension = %.12f\n", parcel_cloud.surf_ten[passed_parcel_idx]);
+   printf("fuel density = %.12f\n", fuel_den);
+   printf("fuel viscosity = %.12f\n", fuel_visc);
+    printf("fuel surface tension = %.12f\n", sigma);
+
 
    // calculate gas and liquid phase weber numbers
 
@@ -559,7 +485,9 @@ CONVERGE_UDF(spray_kh,
 
    length_kh   = parcel_cloud.radius[passed_parcel_idx] - radius_equil;
    time_kh     = breakup_time;
+   time_thermal = breakup_time / 5;
    scale_ratio = length_kh / time_kh;
+
    // KH-ACT Model
    if(ikh == 2 && parcel_cloud.parent[passed_parcel_idx] == 1)
    {
@@ -641,6 +569,24 @@ CONVERGE_UDF(spray_kh,
       }
    }
 
+   // using Converge variables for the thermal breakup implementation
+   P1_T0 = 0.0; // initial start time for ODE
+   P1_T1 = 1.5e-7; // initial output time from ODE
+   P1_DTOUT = 2 * dt; // Using reduced time step for ODE iteration
+   P1_TOL_FACTOR = 1.0e10; // Tolerance factor to check how much the error exceeds the tolerance factor
+   P1_RBInit = parcel_cloud.radius[passed_parcel_idx]/10; // Initial radius of the bubble
+   P1_RBDotInit = 0.1; // Initial radius growth rate of the bubble
+   P1_CL = sound_speed; // Speed of sound in the liquid
+   P1_Pv = fuel_pvap; // Vapor pressure of the liquid
+   P1_pAmbient = ambient_pres; // Ambient pressure in the system
+   P1_sigma = sigma; // Surface tension of the liquid
+   P1_Pr = 0.71; // Prandtl number
+   P1_Pr0 = 0.71; // Initial Prandtl number
+   P1_mu = fuel_visc; // Dynamic viscosity of the liquid
+   P1_kappa = fuel_cond; // Thermal conductivity of the liquid
+   P1_rho = fuel_den; // Density of the liquid
+   sunrealtype y0_array[P1_NOUT];  // Array to store y1 values
+
    if(kh_no_enlarge_flag == 1)   // user can use this flag to turn off the drop enlargement code below
    {
       parcel_cloud.tbreak_kh[passed_parcel_idx] = 0.0;
@@ -692,85 +638,68 @@ CONVERGE_UDF(spray_kh,
       // calculate equilibrium/child drop radius, Eq. 10a in KH model paper referenced in header
 
       radius_equil = balpha_parcel * wave_length;
+      printf("balpha_parcel = %f\n", balpha_parcel);
 
       // calculate the updated radius, based on Eq. 11 in KH model paper referenced in header
 
-      if(kh_model_flag == 1) {
-         therm_iter = 10; // number of iterations for thermal breakup
-         reduced_dt = dt / therm_iter; // reduced time step for thermal breakup
+      if(kh_model_flag == 1)
+      {
+       // Saving the old values for the parcel
+       old_radius = parcel_cloud.radius[passed_parcel_idx];
+       old_drop = parcel_cloud.num_drop[passed_parcel_idx];
 
-         printf ("spray_kh.c sigma = %g vap_den = %g fuel_visc = %g\n", sigma, fuel_den, fuel_visc);
-         printf ("Non-zero values means that the inputs for the bubble ODE are changing \n");
+       printf ("Non-zero values means that the inputs for the bubble ODE are changing \n");
 
-         // using Converge variables for the thermal breakup implementation
-         P1_T0 = 0.0; // initial start time for ODE
-         P1_T1 = 1.5e-7; // initial output time from ODE
-         P1_DTOUT = dt; // Using reduced time step for ODE iteration
-         P1_TOL_FACTOR = 1.0e10; // Tolerance factor to check how much the error exceeds the tolerance factor
-         P1_RBInit = 0.0215e1; // Initial radius of the bubble
-         P1_RBDotInit = 0.1; // Initial radius growth rate of the bubble
-         P1_CL = sound_speed; // Speed of sound in the liquid
-         P1_Pv = fuel_pvap; // Vapor pressure of the liquid
-         P1_pAmbient = ambient_pres; // Ambient pressure in the system
-         P1_sigma = sigma; // Surface tension of the liquid
-         P1_Pr = 0.71; // Prandtl number
-         P1_Pr0 = 0.71; // Initial Prandtl number
-         P1_mu = fuel_visc; // Dynamic viscosity of the liquid
-         P1_kappa = fuel_cond; // Thermal conductivity of the liquid
-         P1_rho = fuel_den;; // Density of the liquid
-         sunrealtype y0_array[P1_NOUT];  // Array to store y1 values
+       // start of sequential implementation of thermal after KH in the same time step
+       Problem1(y0_array);
 
-            // start of thermal breakup implementation
+       // Print the values of the thermal bubble radius for analysis while troubleshooting
+       for (int i = 0; i < P1_NOUT; i++) {
+            printf("original_y0_array[%d] = %12.5e \n", i, y0_array[i]);
+       }
 
-            Problem1(y0_array);
+       // Set the last iteration in the vector array to a new Converge variable
+       radius_bubble = y0_array[9]; // setting radius to the final iteration of the bubble growth ODE
 
-            // Copy the values from sundials into a Converge vector array
-            for (int i = 0; i < P1_NOUT; i++) {
-               original_y0_array[i] = y0_array[i];
-            }
+       Fp = 4 * PI * (P1_Pv * CONVERGE_pow(radius_bubble, 2) - P1_pAmbient * CONVERGE_pow(radius_equil, 2)); // Pressure force
+       printf("Fp = %f\n", Fp);
+       rMean = (radius_bubble + parcel_cloud.radius[passed_parcel_idx]) / 2; // Mean radius
+       printf("rMean = %f\n", rMean);
+       Fs = 2 * PI * rMean * P1_sigma; // Surface tension force
+       printf("Fs = %f\n", Fs);
 
-            // Print the original and new values for comparison while troubleshooting
-            for (int i = 0; i < P1_NOUT; i++) {
-               printf("original_y0_array[%d] = %12.5e \n", i, original_y0_array[i]);
-            }
+       if (Fp > Fs) {
+           // new_radius_2 = cbrt(CONVERGE_pow(radius_old, 3) + (dt / breakup_time) * (CONVERGE_pow(radius_bubble, 3) - CONVERGE_pow(radius_equil, 3)));
+           printf("initial_radius = %f\n", old_radius);
+           Thermal_radius = CONVERGE_cbrt((CONVERGE_pow(parcel_cloud.radius[passed_parcel_idx], 3) - CONVERGE_pow(radius_bubble, 3)) / 2);
+           printf("Thermal radius = %f\n", Thermal_radius);
 
-            // Set the last iteration in the vector array to a new Converge variable
-            radius_bubble = original_y0_array[9]; // setting radius to the final iteration of the bubble growth ODE
+           // Updating the parcel's radius using Eq. 11 in KH model paper referenced in header but modifying with thermal radius and thermal breakup time
+           /* new_radius_thermal =
+               (parcel_cloud.radius[passed_parcel_idx] + (dt / time_thermal) * Thermal_radius) / (1.0 + (dt / time_thermal));*/
 
-            Fp = 4 * PI * (P1_Pv * CONVERGE_pow(radius_bubble,2) - P1_pAmbient * CONVERGE_pow(parcel_cloud.radius[passed_parcel_idx],2));
-            rMean = (radius_bubble + parcel_cloud.radius[passed_parcel_idx]) / 2; // Mean radius
-            Fs = 2 * PI * rMean * P1_sigma; // Surface tension force
+           parcel_cloud.radius[passed_parcel_idx]     = Thermal_radius;
+           parcel_cloud.radius_tm1[passed_parcel_idx] = parcel_cloud.radius[passed_parcel_idx];
+           parcel_cloud.num_drop[passed_parcel_idx] =
+               old_drop * old_radius * old_radius * old_radius /
+               (parcel_cloud.radius[passed_parcel_idx] * parcel_cloud.radius[passed_parcel_idx] *
+               parcel_cloud.radius[passed_parcel_idx]);
+           parcel_cloud.tbreak_rt[passed_parcel_idx]     = 0.0;
+           parcel_cloud.shed_num_drop[passed_parcel_idx] = 0.0;
+           parcel_cloud.shed_mass[passed_parcel_idx]     = 0.0;
 
-            if (Fp > Fs) {
-               // Breakup occurs
-               new_radius_thermal = cbrt(0.5 * (parcel_cloud.radius[passed_parcel_idx] - radius_bubble)); // New radius
-               // new_radius_thermal = fmax(new_radius_thermal, 1.0e-20);
-               old_num_drop = parcel_cloud.num_drop[passed_parcel_idx];
-               parcel_cloud.num_drop[passed_parcel_idx] =
-                  old_num_drop * parcel_cloud.radius[passed_parcel_idx] * parcel_cloud.radius[passed_parcel_idx] *
-                  parcel_cloud.radius[passed_parcel_idx] / (new_radius_thermal * new_radius_thermal * new_radius_thermal);
-               printf ("Thermal breakup worked and updated parcel properties! \n");
-            }else {
-               // No breakup occurs, handle accordingly
-               new_radius_thermal = parcel_cloud.radius[passed_parcel_idx]; // Keep the original radius
-               printf ("No thermal breakup happens \n");
-            }
+           printf("radius_bubble = %.12f\n", radius_bubble);
+           printf("radius = %f\n", parcel_cloud.radius[passed_parcel_idx]);
+       }
 
-            // Use new_radius_thermal in the original KH loop
-            new_radius = (new_radius_thermal + (dt / breakup_time) * radius_equil) / (1.0 + (dt / breakup_time));
-
-            /*
-            new_radius =
-               (parcel_cloud.radius[passed_parcel_idx] + (dt / breakup_time) * radius_equil) / (1.0 + (dt / breakup_time));
-         }
-         else
-         {
-            new_radius = parcel_cloud.radius[passed_parcel_idx] - khact_c_tcav * scale_ratio * dt;
-            new_radius = fmax(new_radius, 1.0e-20);
-         }*/
-
-      // new_radius = (new_radius_thermal + (dt / breakup_time) * radius_equil) / (1.0 + (dt / breakup_time));
-      } else {
+       // Thermal breakup ends and kh breakup continues here
+	   new_radius =
+            (parcel_cloud.radius[passed_parcel_idx] + (dt / breakup_time) * radius_equil) / (1.0 + (dt / breakup_time));
+       printf("radius_equil = %f\n", radius_equil);
+       printf("new_radius = %f\n", new_radius);
+      }
+      else
+      {
          new_radius = parcel_cloud.radius[passed_parcel_idx] - khact_c_tcav * scale_ratio * dt;
          new_radius = fmax(new_radius, 1.0e-20);
       }
@@ -785,6 +714,7 @@ CONVERGE_UDF(spray_kh,
 
       if(kh_new_parcel_flag == 0)
       {
+         printf ("New parcels are not allowed \n");
          parcel_cloud.radius[passed_parcel_idx]     = new_radius;
          parcel_cloud.radius_tm1[passed_parcel_idx] = parcel_cloud.radius[passed_parcel_idx];
       }
@@ -792,6 +722,7 @@ CONVERGE_UDF(spray_kh,
       else
       {
          if(parcel_cloud.shed_num_drop[passed_parcel_idx] == 0.0)
+         printf ("New parcels are allowed \n");
          {
             // initialize shed_num_drop
             parcel_cloud.shed_num_drop[passed_parcel_idx] = old_num_drop;
@@ -862,7 +793,7 @@ CONVERGE_UDF(spray_kh,
             parcel_cloud.radius_tm1[passed_parcel_idx]    = parcel_cloud.radius[passed_parcel_idx];
             parcel_cloud.shed_num_drop[passed_parcel_idx] = 0.0;
             parcel_cloud.shed_mass[passed_parcel_idx] =
-            parcel_cloud.shed_mass[passed_parcel_idx] - (CONVERGE_precision_t)(num_kh)*new_parcel_mass;
+               parcel_cloud.shed_mass[passed_parcel_idx] - (CONVERGE_precision_t)(num_kh)*new_parcel_mass;
 
             //parent parcel's density has not changed, so updating sactive based on volume scaling
             parcel_cloud.sactive[passed_parcel_idx] =
@@ -901,4 +832,3 @@ static void destroy_tables(CONVERGE_species_t species)
 
    CONVERGE_iterator_destroy(&parcel_species_it);
 }
-
