@@ -59,7 +59,7 @@ CONVERGE_precision_t P1_T0, P1_T1, P1_DTOUT, P1_TOL_FACTOR;
 CONVERGE_precision_t P1_RBInit, P1_RBDotInit, P1_CL, P1_Pv, P1_pAmbient, P1_sigma, P1_Pr, P1_Pr0, P1_mu, P1_kappa, P1_rho;
 // ODE Variables
 #define P1_NEQ        2
-#define P1_NOUT       10
+#define P1_NOUT       2
 /* Linear Solver Options */
 /* Enum for solver options */
 enum
@@ -266,29 +266,6 @@ static void PrintFinalStats(void* cvode_mem, int miter, sunrealtype ero)
   long int lenrw, leniw, lenrwLS, leniwLS;
   long int nst, nfe, nsetups, nni, ncfn, netf, nje, nfeLS;
   int retval;
-  retval = CVodeGetWorkSpace(cvode_mem, &lenrw, &leniw);
-  check_retval(&retval, "CVodeGetWorkSpace", 1);
-  retval = CVodeGetNumSteps(cvode_mem, &nst);
-  check_retval(&retval, "CVodeGetNumSteps", 1);
-  retval = CVodeGetNumRhsEvals(cvode_mem, &nfe);
-  check_retval(&retval, "CVodeGetNumRhsEvals", 1);
-  retval = CVodeGetNumLinSolvSetups(cvode_mem, &nsetups);
-  check_retval(&retval, "CVodeGetNumLinSolvSetups", 1);
-  retval = CVodeGetNumErrTestFails(cvode_mem, &netf);
-  check_retval(&retval, "CVodeGetNumErrTestFails", 1);
-  retval = CVodeGetNumNonlinSolvIters(cvode_mem, &nni);
-  check_retval(&retval, "CVodeGetNumNonlinSolvIters", 1);
-  retval = CVodeGetNumNonlinSolvConvFails(cvode_mem, &ncfn);
-  check_retval(&retval, "CVodeGetNumNonlinSolvConvFails", 1);
-  printf("\n Final statistics for this run:\n\n");
-  printf(" CVode real workspace length              = %4ld \n", lenrw);
-  printf(" CVode integer workspace length           = %4ld \n", leniw);
-  printf(" Number of steps                          = %4ld \n", nst);
-  printf(" Number of f-s                            = %4ld \n", nfe);
-  printf(" Number of setups                         = %4ld \n", nsetups);
-  printf(" Number of nonlinear iterations           = %4ld \n", nni);
-  printf(" Number of nonlinear convergence failures = %4ld \n", ncfn);
-  printf(" Number of error test failures            = %4ld \n\n", netf);
   if (miter != FUNC)
   {
     if (miter != DIAG)
@@ -357,6 +334,8 @@ static int check_retval(void* returnvalue, const char* funcname, int opt)
    return (0);
 }
 
+static long spray_kh_thermal_call_count = 0;
+
 CONVERGE_UDF(spray_kh,
              IN(VALUE(CONVERGE_index_t, passed_parcel_idx),
                 VALUE(CONVERGE_cloud_t, passed_spray_cloud),
@@ -397,6 +376,7 @@ CONVERGE_UDF(spray_kh,
    CONVERGE_precision_t oldparent_radius;
    CONVERGE_precision_t liquid_mass_in_cell;
    CONVERGE_precision_t radius_bubble, Fp, rMean, Fs, Thermal_radius, new_radius_thermal, old_drop, old_radius;
+   CONVERGE_precision_t deltat, C1, C2;
 
    CONVERGE_index_t spray_elsa_flag    = CONVERGE_get_int("lagrangian.elsa_flag");
    CONVERGE_index_t num_gas_species    = CONVERGE_species_num_gas(passed_species);
@@ -434,9 +414,19 @@ CONVERGE_UDF(spray_kh,
    printf("parcel surface tension = %.12f\n", parcel_cloud.surf_ten[passed_parcel_idx]);
    printf("fuel density = %.12f\n", fuel_den);
    printf("fuel viscosity = %.12f\n", fuel_visc);
-    printf("fuel surface tension = %.12f\n", sigma);
+   printf("fuel surface tension = %.12f\n", sigma);
+   printf("fuel temperature = %.12f\n", fuel_temp);
+   printf("parcel fuel temperature = %.12f\n", parcel_cloud.temp[passed_parcel_idx]);
+   printf("fuel conductivity = %.12f\n", fuel_cond);
+   printf("sound speed = %.12f\n", sound_speed);
 
-
+   deltat = parcel_cloud.temp[passed_parcel_idx] - 349; // 349 is the reference temperature for this fuel. Would need to be adjusted for other fuels
+   printf( "deltaT = %.12f\n", deltat);
+   C1 = 1.0e-23;
+   C2 = -0.3;
+   CONVERGE_precision_t ini_bubble_radius;
+   ini_bubble_radius= CONVERGE_cbrt(C1 * exp(C2/deltat));
+   printf("ini_bubble_radius = %.12f\n", ini_bubble_radius);
    // calculate gas and liquid phase weber numbers
 
    liquid_mass_in_cell = 0.0;
@@ -569,22 +559,60 @@ CONVERGE_UDF(spray_kh,
       }
    }
 
+   // get the parcel properties given the current temperature and current mass fractions
+   temp_index = (CONVERGE_index_t)(parcel_cloud.temp[passed_parcel_idx] / 10.0);
+   fr_temp    = parcel_cloud.temp[passed_parcel_idx] / 10.0 - (CONVERGE_precision_t)temp_index;
+   tot_pvap   = 0.0;
+   for(CONVERGE_index_t isp = 0, isp_global = CONVERGE_iterator_first(psp_it); isp < num_parcel_species;
+       isp++, isp_global                    = CONVERGE_iterator_next(psp_it))
+   {
+      const CONVERGE_precision_t isp_tcrit = CONVERGE_species_tcrit(passed_species, isp_global);
+      if(parcel_cloud.temp[passed_parcel_idx] < isp_tcrit)
+      {
+         it_prop = temp_index;
+         fr_prop = fr_temp;
+      }
+      else
+      {
+         it_prop = (CONVERGE_index_t)(isp_tcrit / 10.0);
+         fr_prop = isp_tcrit / 10.0 - (CONVERGE_precision_t)it_prop;
+      }
+      double temp1 = (it_prop + fr_prop) * 10.;
+      pvap         = CONVERGE_table_lookup(pvap_table[isp], temp1);
+
+      if(pvap < 1.0e-10)
+      {
+         pvap = 1.0e-10;
+      }
+      if(pvap > passed_pressure)
+      {
+         pvap = passed_pressure;
+      }
+      tot_pvap = tot_pvap + parcel_cloud.mfrac[num_parcel_species * passed_parcel_idx + isp] * pvap;
+   }
+
+   printf("parcel pvap is = %.12f\n", tot_pvap);
+   printf("fuel vapor pressure = %.12f\n", fuel_pvap);
+
    // using Converge variables for the thermal breakup implementation
    P1_T0 = 0.0; // initial start time for ODE
    P1_T1 = 1.5e-7; // initial output time from ODE
-   P1_DTOUT = 2 * dt; // Using reduced time step for ODE iteration
-   P1_TOL_FACTOR = 1.0e10; // Tolerance factor to check how much the error exceeds the tolerance factor
-   P1_RBInit = parcel_cloud.radius[passed_parcel_idx]/10; // Initial radius of the bubble
+   // P1_DTOUT = 2 * dt; // Using reduced time step for ODE iteration
+   P1_DTOUT = 0.2; // Using reduced time step for ODE iteration
+   P1_TOL_FACTOR = 1.0e7; // Tolerance factor to check how much the error exceeds the tolerance factor
+   // P1_RBInit = parcel_cloud.radius[passed_parcel_idx]/10; // Initial radius of the bubble
+   P1_RBInit = ini_bubble_radius; // Initial radius of the bubble using Senda formulation
+   // P1_RBInit = 0.0215e-6;
    P1_RBDotInit = 0.1; // Initial radius growth rate of the bubble
    P1_CL = sound_speed; // Speed of sound in the liquid
-   P1_Pv = fuel_pvap; // Vapor pressure of the liquid
+   P1_Pv = tot_pvap; // Vapor pressure of the liquid parcel
    P1_pAmbient = ambient_pres; // Ambient pressure in the system
-   P1_sigma = sigma; // Surface tension of the liquid
+   P1_sigma = parcel_cloud.surf_ten[passed_parcel_idx]; // Surface tension of the liquid
    P1_Pr = 0.71; // Prandtl number
    P1_Pr0 = 0.71; // Initial Prandtl number
-   P1_mu = fuel_visc; // Dynamic viscosity of the liquid
+   P1_mu = parcel_cloud.viscosity[passed_parcel_idx]; // Dynamic viscosity of the liquid
    P1_kappa = fuel_cond; // Thermal conductivity of the liquid
-   P1_rho = fuel_den; // Density of the liquid
+   P1_rho = parcel_cloud.density[passed_parcel_idx]; // Density of the liquid
    sunrealtype y0_array[P1_NOUT];  // Array to store y1 values
 
    if(kh_no_enlarge_flag == 1)   // user can use this flag to turn off the drop enlargement code below
@@ -659,7 +687,7 @@ CONVERGE_UDF(spray_kh,
        }
 
        // Set the last iteration in the vector array to a new Converge variable
-       radius_bubble = y0_array[9]; // setting radius to the final iteration of the bubble growth ODE
+       radius_bubble = y0_array[1]; // setting radius to the final iteration of the bubble growth ODE
 
        Fp = 4 * PI * (P1_Pv * CONVERGE_pow(radius_bubble, 2) - P1_pAmbient * CONVERGE_pow(radius_equil, 2)); // Pressure force
        printf("Fp = %f\n", Fp);
@@ -668,9 +696,21 @@ CONVERGE_UDF(spray_kh,
        Fs = 2 * PI * rMean * P1_sigma; // Surface tension force
        printf("Fs = %f\n", Fs);
 
-       if (Fp > Fs) {
-           // new_radius_2 = cbrt(CONVERGE_pow(radius_old, 3) + (dt / breakup_time) * (CONVERGE_pow(radius_bubble, 3) - CONVERGE_pow(radius_equil, 3)));
-           printf("initial_radius = %f\n", old_radius);
+       if (fabs(Fp) > fabs(Fs)) {
+          int rank;
+          CONVERGE_mpi_comm_rank(&rank);
+          printf("MPI rank from spray_kh: %d\n", rank);
+
+          /* Increment your counter each time this UDF runs */
+          spray_kh_thermal_call_count++;
+
+          /* (Option A) Print every N calls—for example every 10,000 injections: */
+          if (spray_kh_thermal_call_count % 500 == 0 && rank == 5) {
+             printf("[spray_kh_thermal] called %ld times so far\n",
+                    spray_kh_thermal_call_count);
+          }
+
+          printf("initial_radius = %.12f\n", old_radius);
            Thermal_radius = CONVERGE_cbrt((CONVERGE_pow(parcel_cloud.radius[passed_parcel_idx], 3) - CONVERGE_pow(radius_bubble, 3)) / 2);
            printf("Thermal radius = %f\n", Thermal_radius);
 
@@ -690,6 +730,7 @@ CONVERGE_UDF(spray_kh,
 
            printf("radius_bubble = %.12f\n", radius_bubble);
            printf("radius = %f\n", parcel_cloud.radius[passed_parcel_idx]);
+
        }
 
        // Thermal breakup ends and kh breakup continues here
