@@ -1,4 +1,3 @@
-
 /*******************************************************************************
 * CONVERGENT SCIENCE CONFIDENTIAL                                              *
 * All rights reserved.                                                         *
@@ -369,6 +368,9 @@ CONVERGE_UDF(spray_kh,
    CONVERGE_iterator_t psp_it;
    CONVERGE_species_parcel_iterator_create(passed_species, &psp_it);
 
+   // Thermal breakup threshold
+   const CONVERGE_precision_t time_thermal_breakup_threshold = 1.0e-6; // Time threshold for thermal breakup (s)
+
    // set KH model constants cnst2_parcel and balpha_parcel based on the injector
    // that the parcel came from
 
@@ -403,7 +405,7 @@ CONVERGE_UDF(spray_kh,
    printf("fuel conductivity = %.12f\n", fuel_cond);
    printf("sound speed = %.12f\n", sound_speed);
 
-    // Initialize deltaT with safety check
+   // Initialize deltaT with safety check
     deltat = parcel_cloud.temp[passed_parcel_idx] - 349; // Reference temperature 349 K
     const CONVERGE_precision_t MIN_DELTAT = 1.0e-3; // Small positive threshold
     if (deltat <= 0) {
@@ -448,8 +450,8 @@ CONVERGE_UDF(spray_kh,
    growth_rate =
       (0.34 + 0.38 * weber_gas * CONVERGE_sqrt(weber_gas)) / ((1.0 + ohn) * (1.0 + 1.4 * CONVERGE_pow(taylor, 0.6)));
    frequency   = CONVERGE_sqrt(parcel_cloud.surf_ten[passed_parcel_idx] /
-                             (parcel_cloud.density[passed_parcel_idx] * parcel_cloud.radius[passed_parcel_idx] *
-                              parcel_cloud.radius[passed_parcel_idx] * parcel_cloud.radius[passed_parcel_idx]));
+                                     (parcel_cloud.density[passed_parcel_idx] * parcel_cloud.radius[passed_parcel_idx] *
+                                      parcel_cloud.radius[passed_parcel_idx] * parcel_cloud.radius[passed_parcel_idx]));
    growth_rate = growth_rate * frequency;
 
    // KH breakup time, Eq. 12 in KH model paper referenced in header
@@ -463,7 +465,6 @@ CONVERGE_UDF(spray_kh,
 
    length_kh   = parcel_cloud.radius[passed_parcel_idx] - radius_equil;
    time_kh     = breakup_time;
-  // time_thermal = breakup_time / 5;
    scale_ratio = length_kh / time_kh;
 
    // KH-ACT Model
@@ -490,7 +491,7 @@ CONVERGE_UDF(spray_kh,
             it_prop = (CONVERGE_index_t)(isp_tcrit / 10.0);
             fr_prop = isp_tcrit / 10.0 - (CONVERGE_precision_t)it_prop;
          }
-         double temp1 = (it_prop + fr_prop) * 10.;
+         double temp1 = (it_prop + fr_prop) * 10.0;
          pvap         = CONVERGE_table_lookup(pvap_table[isp], temp1);
 
          if(pvap < 1.0e-10)
@@ -565,14 +566,14 @@ CONVERGE_UDF(spray_kh,
          it_prop = (CONVERGE_index_t)(isp_tcrit / 10.0);
          fr_prop = isp_tcrit / 10.0 - (CONVERGE_precision_t)it_prop;
       }
-      double temp1 = (it_prop + fr_prop) * 10.;
+      double temp1 = (it_prop + fr_prop) * 10.0;
       pvap         = CONVERGE_table_lookup(pvap_table[isp], temp1);
 
       if(pvap < 1.0e-10)
       {
          pvap = 1.0e-10;
       }
-      if(pvap > passed_pressure)
+      if(pvap == passed_pressure)
       {
          pvap = passed_pressure;
       }
@@ -587,7 +588,7 @@ CONVERGE_UDF(spray_kh,
     P1_DTOUT = P1_T1 / 12;        // Reduced time step for ODE iteration (assuming P1_NOUT = 12)
     P1_TOL_FACTOR = 100.0;        // Reduced tolerance factor for better stability
     P1_RBInit = ini_bubble_radius; // Initial radius of the bubble using Senda formulation
-    P1_RBDotInit = 0.0;           // Initial radius growth rate of the bubble
+    P1_RBDotInit = 0.0;           // Initial radius growth rate
     P1_CL = sound_speed;          // Speed of sound in the liquid
     P1_Pv = fuel_pvap;            // Vapor pressure of the liquid parcel
     P1_pAmbient = ambient_pres;   // Ambient pressure in the system
@@ -626,9 +627,7 @@ CONVERGE_UDF(spray_kh,
                                        parcel_cloud.rel_vel_mag[passed_parcel_idx] / growth_rate);
             radius_old = parcel_cloud.radius[passed_parcel_idx];
 
-            // update parcel's radius (minimum of radius_eq1 and radius_eq2) and drop number
-            // also zero the RT breakup time and shed_num_drop variable if breakup takes place
-
+            // update parcel's radius and drop count
             parcel_cloud.radius[passed_parcel_idx]     = (radius_eq1 < radius_eq2) ? radius_eq1 : radius_eq2;
             parcel_cloud.radius_tm1[passed_parcel_idx] = parcel_cloud.radius[passed_parcel_idx];
             parcel_cloud.num_drop[passed_parcel_idx] =
@@ -644,114 +643,234 @@ CONVERGE_UDF(spray_kh,
    // KH model drop breakup
    else
    {
-      // calculate equilibrium/child drop radius, Eq. 10a in KH model paper referenced in header
-
+      // calculate equilibrium/child drop radius
       radius_equil = balpha_parcel * wave_length;
-      // printf("balpha_parcel = %f\n", balpha_parcel);
-
-      // calculate the updated radius, based on Eq. 11 in KH model paper referenced in header
 
       if (kh_model_flag == 1) {
-    // Saving the old values for the parcel
-    old_radius = parcel_cloud.radius[passed_parcel_idx];
-    old_drop = parcel_cloud.num_drop[passed_parcel_idx];
+         // Save old values
+         old_radius = parcel_cloud.radius[passed_parcel_idx];
+         old_drop = parcel_cloud.num_drop[passed_parcel_idx];
 
-    printf("Non-zero values means that the inputs for the bubble ODE are changing \n");
+         printf("\nNon-zero values indicate changing ODE inputs:\n");
 
-    deltat = parcel_cloud.temp[passed_parcel_idx] - 349;
-    if (deltat <= 0) deltat = 1.0e-6;
-          CONVERGE_precision_t exp_term = exp(C2 / deltat);
-    if (exp_term <= 0.0 || isnan(exp_term)) {
-          printf("Error: exp_term = %e, deltat = %e, clamping ini_bubble_radius\n", exp_term, deltat);
-          ini_bubble_radius = 1.0e-6;
-    } else {
-          ini_bubble_radius = CONVERGE_cbrt(C1 * exp_term);
-    }
-          printf("deltat = %e, exp_term = %e, ini_bubble_radius = %e\n", deltat, exp_term, ini_bubble_radius);
+         deltat = parcel_cloud.temp[passed_parcel_idx] - 349;
+         if (deltat <= 0) {
+            deltat = 1.0e-6;
+         }
+         CONVERGE_precision_t exp_term = exp(C2 / deltat);
+         if (exp_term <= 0.0 || isnan(exp_term)) {
+            printf("\nError: exp_term = %.12e, deltat = %.12e, clamping ini_bubble_radius\n", exp_term, deltat);
+            ini_bubble_radius = 1.0e-6;
+         } else {
+            ini_bubble_radius = CONVERGE_cbrt(C1 * exp_term);
+            printf("\ndeltat = %.12e, exp_term = %.12e, ini_bubble_radius = %.12e\n", deltat, exp_term, ini_bubble_radius);
+         }
 
-    // Bubble initialization
-    P1_RBInit = ini_bubble_radius;
+         // Bubble initialization
+         P1_RBInit = ini_bubble_radius;
 
-    // Safety checks
-          if (P1_RBInit < 1.0e-5) {
-              printf("Warning: P1_RBInit clamped from %e to 1.0e-5 for parcel %d\n", P1_RBInit, passed_parcel_idx);
-              P1_RBInit = 1.0e-5; // Prevent numerical issues
-          }
-          if (P1_CL <= 0.0) {
-              printf("Error: P1_CL clamped to 1100.0 for parcel %d\n", passed_parcel_idx);
-              P1_CL = 1100.0; // Approximate for isooctane
-          }
-          if (P1_rho <= 0.0) {
-              printf("Error: P1_rho clamped to 692.0 for parcel %d\n", passed_parcel_idx);
-              P1_rho = 692.0; // Approximate for isooctane
-          }
+         // Safety checks
+         if (P1_RBInit < 1.0e-8) {
+            printf("\nWarning: P1_RBInit clamped to 1.0e-10 for parcel %d\n", passed_parcel_idx);
+            P1_RBInit = 1.0e-8;
+         }
+         if (P1_CL <= 0) {
+            printf("\nError: P1_CL clamped to 1100.0 for parcel %d\n", passed_parcel_idx);
+            P1_CL = 1100.0;
+         }
+         if (P1_rho <= 0) {
+            printf("\nError: P1_rho clamped to 692.0 for parcel %d\n", passed_parcel_idx);
+            P1_rho = 692.0;
+         }
 
-    // Run ODE solver for bubble growth
-    CONVERGE_precision_t y0_array[P1_NOUT];
-    CONVERGE_precision_t bubble_growth_rate;
-    Problem1(y0_array, dt, &bubble_growth_rate);
+         // Run ODE solver
+         CONVERGE_precision_t y0_array[P1_NOUT];
+         CONVERGE_precision_t bubble_growth_rate;
+         Problem1(y0_array, dt, &bubble_growth_rate);
 
-    // Print the values of the thermal bubble radius for analysis while troubleshooting
-    for (int i = 0; i < P1_NOUT; i++) {
-        printf("original_y0_array[%d] = %12.5e \n", i, y0_array[i]);
-    }
+         // Debug output
+         for (int i = 0; i < P1_NOUT; i++) {
+            printf("\noriginal_y0_array[%d] = %.12f\n", i, y0_array[i]);
+         }
 
-    // Set the last iteration in the vector array to a new Converge variable
-    radius_bubble = y0_array[P1_NOUT - 1];
-    time_thermal = radius_bubble / fmax(fabs(bubble_growth_rate), 1.0e-10); // Thermal timescale
+         // Extract final bubble radius and timescale
+         radius_bubble = y0_array[P1_NOUT - 1];
+         time_thermal = radius_bubble / fmax(fabs(bubble_growth_rate), 1.0e-10);
 
-    // Compute thermal breakup contribution
-    CONVERGE_precision_t thermal_radius_change = 0.0;
-    CONVERGE_precision_t interaction_factor = 1.0; // To account for thermal enhancement of KH breakup
+         // Initialize thermal radius change
+         CONVERGE_precision_t thermal_radius_change = 0.0;
+         CONVERGE_precision_t interaction_factor = 1.0;
 
-    Fp = 4 * PI * (P1_Pv * CONVERGE_pow(radius_bubble, 2) -
-                                       P1_pAmbient * CONVERGE_pow(old_radius, 2));
-    printf("Fp = %f\n", Fp);
+            // Compute forces
+    Fp = 4 * PI * (P1_Pv * CONVERGE_pow(radius_bubble, 2) - P1_pAmbient * CONVERGE_pow(old_radius, 2));
+    printf("\nFp = %.12f\n", Fp);
     rMean = (radius_bubble + old_radius) / 2;
-    printf("rMean = %f\n", rMean);
+    printf("\nrMean = %.12f\n", rMean);
     Fs = 2 * PI * rMean * P1_sigma;
-    printf("Fs = %f\n", Fs);
+    printf("\nFs = %.12f\n", Fs);
 
-    if (fabs(Fp) > fabs(Fs)) {
-        int rank;
-        CONVERGE_mpi_comm_rank(&rank);
-        printf("MPI rank from spray_kh: %d\n", rank);
+    // Check for thermal breakup condition
+    CONVERGE_precision_t tcrit = CONVERGE_species_tcrit(passed_species, 0); // First species critical temp
+    if (parcel_cloud.temp[passed_parcel_idx] >= tcrit && fabs(Fp) > fabs(Fs)) {
+        // Use time_thermal directly for breakup condition
+        printf("\nThermal breakup check: time_thermal = %.12e, tcrit = %.12f, temp = %.12f\n",
+               time_thermal, tcrit, parcel_cloud.temp[passed_parcel_idx]);
 
-        /* Increment your counter each time this UDF runs */
-        spray_kh_thermal_call_count++;
+        if (dt >= time_thermal * time_thermal_breakup_threshold) {
+            // Trigger thermal breakup
+            int rank;
+            CONVERGE_mpi_comm_rank(&rank);
+            printf("\nMPI rank from spray_kh_thermal: %d\n", rank);
 
-        /* (Option A) Print every N calls—for example every 10,000 injections: */
-        if (spray_kh_thermal_call_count % 500 == 0 && rank == 5) {
-            printf("[spray_kh_thermal] called %ld times so far\n",
-                   spray_kh_thermal_call_count);
+            spray_kh_thermal_call_count++;
+            if (spray_kh_thermal_call_count % 500 == 0 && rank == 5) {
+                printf("\n[spray_kh_thermal] called %ld times\n", spray_kh_thermal_call_count);
+            }
+
+            printf("\nold_radius = %.12f, radius_bubble = %.12f\n", old_radius, radius_bubble);
+            if (radius_bubble > old_radius) {
+                printf("\nWarning: radius_bubble clamped to old_radius\n");
+                radius_bubble = old_radius;
+            }
+
+            // Calculate remaining liquid volume
+            CONVERGE_precision_t liquid_volume = CONVERGE_pow(old_radius, 3);
+            CONVERGE_precision_t bubble_volume = CONVERGE_pow(radius_bubble, 3);
+            Thermal_radius = CONVERGE_cbrt(fmax(liquid_volume - bubble_volume, 0.0));
+            printf("\nThermal radius = %.12f, liquid_volume = %.12e, bubble_volume = %.12e\n",
+                   Thermal_radius, liquid_volume, bubble_volume);
+
+            // Energy analysis
+            if (Thermal_radius > 0) {
+                // Pressure work
+                CONVERGE_precision_t DeltaP = P1_Pv - P1_pAmbient;
+                CONVERGE_precision_t Wp = DeltaP * (4.0 / 3.0) * PI *
+                                          (CONVERGE_pow(Thermal_radius, 3) - CONVERGE_pow(radius_bubble, 3));
+
+                // Surface energy change
+                CONVERGE_precision_t DeltaE_surf = 4 * PI * P1_sigma *
+                                                  (CONVERGE_pow(old_radius, 2) - 2 * CONVERGE_pow(Thermal_radius, 2));
+
+                // Surplus energy
+                CONVERGE_precision_t eta = 1.0;
+                CONVERGE_precision_t DeltaE_flash = eta * (Wp - DeltaE_surf);
+
+                // Velocity increment
+                CONVERGE_precision_t mass = P1_rho * (4.0 / 3.0) * PI * CONVERGE_pow(Thermal_radius, 3);
+                CONVERGE_precision_t DeltaV_flash = 0.0;
+                if (DeltaE_flash > 0) {
+                    DeltaV_flash = sqrt(2 * DeltaE_flash / mass) + fabs(bubble_growth_rate);
+                } else {
+                    DeltaV_flash = fabs(bubble_growth_rate);
+                }
+
+                // Compute velocity magnitude and direction
+                CONVERGE_precision_t vel_mag = sqrt(CONVERGE_pow(passed_velocity[0], 2) +
+                                                   CONVERGE_pow(passed_velocity[1], 2) +
+                                                   CONVERGE_pow(passed_velocity[2], 2));
+                CONVERGE_precision_t vel_dir[3] = {0.0, 0.0, 0.0};
+                if (vel_mag > 1.0e-10) {
+                    vel_dir[0] = passed_velocity[0] / vel_mag;
+                    vel_dir[1] = passed_velocity[1] / vel_mag;
+                    vel_dir[2] = passed_velocity[2] / vel_mag;
+                } else {
+                    vel_dir[0] = 1.0; vel_dir[1] = 0.0; vel_dir[2] = 0.0;
+                }
+
+                // Generate normal direction
+                CONVERGE_precision_t normal_dir[3];
+                CONVERGE_precision_t rand1 = (CONVERGE_precision_t)rand() / RAND_MAX;
+                CONVERGE_precision_t rand2 = (CONVERGE_precision_t)rand() / RAND_MAX;
+                normal_dir[0] = vel_dir[1]; normal_dir[1] = -vel_dir[0]; normal_dir[2] = 0.0;
+                if (fabs(normal_dir[0]) < 1.0e-10 && fabs(normal_dir[1]) < 1.0e-10) {
+                    normal_dir[0] = 0.0; normal_dir[1] = vel_dir[2]; normal_dir[2] = -vel_dir[1];
+                }
+                CONVERGE_precision_t normal_mag = sqrt(CONVERGE_pow(normal_dir[0], 2) +
+                                                      CONVERGE_pow(normal_dir[1], 2) +
+                                                      CONVERGE_pow(normal_dir[2], 2));
+                if (normal_mag > 1.0e-10) {
+                    normal_dir[0] /= normal_mag;
+                    normal_dir[1] /= normal_mag;
+                    normal_dir[2] /= normal_mag;
+                }
+
+                // Split velocity increment
+                CONVERGE_precision_t eta_n = 0.9;
+                CONVERGE_precision_t DeltaV_rel = (1.0 - eta_n) * DeltaV_flash;
+                CONVERGE_precision_t DeltaV_norm = eta_n * DeltaV_flash;
+
+                if (kh_new_parcel_flag == 1) {
+                    // Create two child parcels
+                    CONVERGE_index_t num_child = 2;
+                    for (int i = 0; i < num_child; i++) {
+                        // Copy parent velocity to local array
+                        CONVERGE_precision_t vel_local[3];
+                        vel_local[0] = passed_velocity[0];
+                        vel_local[1] = passed_velocity[1];
+                        vel_local[2] = passed_velocity[2];
+
+                        // Apply velocity increment
+                        CONVERGE_precision_t sign = (i == 0) ? 1.0 : -1.0;
+                        for (int j = 0; j < 3; j++) {
+                            vel_local[j] += sign * (DeltaV_rel * vel_dir[j] + DeltaV_norm * normal_dir[j]);
+                        }
+
+                        CONVERGE_precision_t kh_const1 = CONVERGE_injector_get_parameter_precision(injector, INJECTOR_KH_CONST1);
+                        CONVERGE_precision_t child_num_drop = old_drop / num_child;
+                        CONVERGE_spray_child_parcel(vel_local,
+                                                   growth_rate,
+                                                   wave_length,
+                                                   Thermal_radius,
+                                                   child_num_drop,
+                                                   kh_const1,
+                                                   passed_parcel_idx,
+                                                   passed_spray_cloud);
+
+                        // Reload cloud after adding parcels
+                        load_user_cloud(&parcel_cloud, passed_spray_cloud);
+                    }
+
+                    // Update parent parcel
+                    parcel_cloud.num_drop[passed_parcel_idx] = 0; // Mark parent as empty
+                    parcel_cloud.tbreak_rt[passed_parcel_idx] = 0.0;
+                    parcel_cloud.shed_num_drop[passed_parcel_idx] = 0.0;
+                    parcel_cloud.shed_mass[passed_parcel_idx] = 0.0;
+
+                    printf("\nThermal breakup: old_radius = %.12f, new_radius = %.12f, num_child = %d\n",
+                           old_radius, Thermal_radius, num_child);
+                    CONVERGE_LAGRANGE_Parcel_discretize_big(CONVERGE_get_int("lagrangian.evap_layers_per_drop"),
+                                                            0,
+                                                            passed_parcel_idx,
+                                                            passed_spray_cloud);
+                    destroy_tables(passed_species);
+                    CONVERGE_iterator_destroy(&psp_it);
+                    return; // Exit after breakup
+                } else {
+                    // Update current parcel without creating new ones
+                    parcel_cloud.num_drop[passed_parcel_idx] = old_drop * old_radius * old_radius * old_radius /
+                                                              (Thermal_radius * Thermal_radius * Thermal_radius);
+                    parcel_cloud.radius[passed_parcel_idx] = Thermal_radius;
+                    // No time_breakup reset needed
+                }
+            }
+
+            thermal_radius_change = old_radius - Thermal_radius;
+            interaction_factor = 1.0 + (radius_bubble / old_radius);
         }
-
-        printf("old_radius = %.12f, radius_bubble = %.12f\n", old_radius, radius_bubble);
-        if (radius_bubble > old_radius) {
-            printf("Warning: radius_bubble clamped to old_radius\n");
-            radius_bubble = old_radius;
-        }
-        CONVERGE_precision_t liquid_volume = CONVERGE_pow(old_radius, 3);
-        CONVERGE_precision_t bubble_volume = CONVERGE_pow(radius_bubble, 3);
-        Thermal_radius = CONVERGE_cbrt(fmax(liquid_volume - bubble_volume, 0.0));
-        printf("Thermal radius = %f, liquid_volume = %.12e, bubble_volume = %.12e\n",
-               Thermal_radius, liquid_volume, bubble_volume);
-        thermal_radius_change = old_radius - Thermal_radius;
-        interaction_factor = 1.0 + radius_bubble / old_radius;
     }
 
-    // Compute KH breakup contribution with interaction
-    CONVERGE_precision_t effective_breakup_time = breakup_time / interaction_factor; // Faster KH breakup due to thermal effects
+    // Compute KH contribution
+    CONVERGE_precision_t effective_breakup_time = breakup_time / interaction_factor;
     CONVERGE_precision_t kh_radius = (old_radius + (dt / effective_breakup_time) * radius_equil) /
                                     (1.0 + (dt / effective_breakup_time));
     CONVERGE_precision_t kh_radius_change = old_radius - kh_radius;
 
-    // Combine thermal and KH contributions
+    // Combine contributions
     CONVERGE_precision_t w_thermal = breakup_time / (breakup_time + time_thermal);
     CONVERGE_precision_t w_kh = time_thermal / (breakup_time + time_thermal);
     CONVERGE_precision_t combined_radius_change = w_thermal * thermal_radius_change + w_kh * kh_radius_change;
     new_radius = old_radius - combined_radius_change;
-    new_radius = fmax(new_radius, 1.0e-20); // Prevent unphysically small radius
+    new_radius = fmax(new_radius, 1.0e-20);
 
     // Update parcel properties
     parcel_cloud.radius[passed_parcel_idx] = new_radius;
@@ -763,36 +882,33 @@ CONVERGE_UDF(spray_kh,
     parcel_cloud.shed_num_drop[passed_parcel_idx] = 0.0;
     parcel_cloud.shed_mass[passed_parcel_idx] = 0.0;
 
-    printf("Simultaneous breakup: old_radius = %.12f, thermal_change = %.12f, kh_change = %.12f, new_radius = %.12f\n",
+    printf("\nSimultaneous breakup: old_radius = %.12f, thermal_change = %.12f, kh_change = %.12f, new_radius = %.12f\n",
            old_radius, thermal_radius_change, kh_radius_change, new_radius);
-    printf("Weights: w_thermal = %.12f, w_kh = %.12f, time_thermal = %.12f, breakup_time = %.12f, interaction_factor = %.12f\n",
+    printf("\nWeights: w_thermal = %.12f, w_kh = %.12f, time_thermal = %.12f, breakup_time = %.12f, interaction_factor = %.12f\n",
            w_thermal, w_kh, time_thermal, breakup_time, interaction_factor);
 } else {
     new_radius = parcel_cloud.radius[passed_parcel_idx] - khact_c_tcav * scale_ratio * dt;
     new_radius = fmax(new_radius, 1.0e-20);
 }
 
-      // save parcel's drop number and calculate updated drop number
+      // Update drop number
       old_num_drop = parcel_cloud.num_drop[passed_parcel_idx];
       parcel_cloud.num_drop[passed_parcel_idx] =
          old_num_drop * parcel_cloud.radius[passed_parcel_idx] * parcel_cloud.radius[passed_parcel_idx] *
          parcel_cloud.radius[passed_parcel_idx] / (new_radius * new_radius * new_radius);
 
-      // if new (child) parcels are not allowed, update the parcel radius
-
+      // Handle new parcels
       if(kh_new_parcel_flag == 0)
       {
-         printf ("New parcels are not allowed \n");
+         printf("New parcels are not allowed\n");
          parcel_cloud.radius[passed_parcel_idx]     = new_radius;
-         parcel_cloud.radius_tm1[passed_parcel_idx] = parcel_cloud.radius[passed_parcel_idx];
+         parcel_cloud.radius_tm1[passed_parcel_idx] = new_radius;
       }
-      // if new parcels are allowed, calculate how many child parcels are to be added
       else
       {
          if(parcel_cloud.shed_num_drop[passed_parcel_idx] == 0.0)
-         printf ("New parcels are allowed \n");
          {
-            // initialize shed_num_drop
+            printf("New parcels are allowed\n");
             parcel_cloud.shed_num_drop[passed_parcel_idx] = old_num_drop;
          }
 
@@ -812,50 +928,45 @@ CONVERGE_UDF(spray_kh,
 
          if(num_kh == 0)
          {
-            // do not add child parcels yet, but update parent parcel radius (num_drop was updated above)
-            parcel_cloud.radius[passed_parcel_idx]     = new_radius;
-            parcel_cloud.radius_tm1[passed_parcel_idx] = parcel_cloud.radius[passed_parcel_idx];
+            // Update parent parcel
+            parcel_cloud.radius[passed_parcel_idx] = new_radius;
+            parcel_cloud.radius_tm1[passed_parcel_idx] = new_radius;
          }
-         else
-         {
-            // one or more parcels is predicted to shed off
+         else {
             CONVERGE_LAGRANGE_Spray_Parcel_make_small(passed_parcel_idx, passed_spray_cloud);
             new_parcel_mass     = newparcel_cutoff_parcel * mass_per_parcel;
-            new_parcel_num_drop = new_parcel_mass / (PI * (4.0 / 3.0) * parcel_cloud.density[passed_parcel_idx] *
-                                                     radius_equil * radius_equil * radius_equil);
+            new_parcel_num_drop = new_parcel_mass / (PI * (4.0 / 3.0) * parcel_cloud.density[passed_parcel_idx]
+                                                      * radius_equil * radius_equil * radius_equil);
+         }
 
             for(nnn = 0; nnn < num_kh; nnn++)
             {
-               // calculate the parent parcel's drop number
-
+               // Update parent drop count
                num_drop_tmp = (old_num_drop * parcel_cloud.radius[passed_parcel_idx] *
-                                  parcel_cloud.radius[passed_parcel_idx] * parcel_cloud.radius[passed_parcel_idx] -
-                               ((CONVERGE_precision_t)(num_kh)) * new_parcel_num_drop * radius_equil * radius_equil *
-                                  radius_equil) /
-                              (new_radius * new_radius * new_radius);
+                                     parcel_cloud.radius[passed_parcel_idx] * parcel_cloud.radius[passed_parcel_idx] -
+                                     ((CONVERGE_precision_t)(num_kh)) * new_parcel_num_drop * radius_equil * radius_equil *
+                                     radius_equil) /
+                                    (new_radius * new_radius * new_radius);
                parcel_cloud.num_drop[passed_parcel_idx] = old_num_drop;
 
-               // create new child parcel and initialize its properties
-
+               // Create child parcel
                CONVERGE_precision_t kh_const1 = CONVERGE_injector_get_parameter_precision(injector, INJECTOR_KH_CONST1);
                CONVERGE_spray_child_parcel(passed_velocity,
-                                           growth_rate,
-                                           wave_length,
-                                           radius_equil,
-                                           new_parcel_num_drop,
-                                           kh_const1,
-                                           passed_parcel_idx,
-                                           passed_spray_cloud);
-               // reload after adding parcels
+                                     growth_rate,
+                                     wave_length,
+                                     radius_equil,
+                                     new_parcel_num_drop,
+                                     kh_const1,
+                                     passed_parcel_idx,
+                                     passed_spray_cloud);
+               // Reload cloud
                load_user_cloud(&parcel_cloud, passed_spray_cloud);
 
-               // since breakup occurred, zero the parent parcel's RT breakup time
                parcel_cloud.num_drop[passed_parcel_idx] = fmax(num_drop_tmp, 0.0);
                parcel_cloud.tbreak_rt[passed_parcel_idx] = 0.0;
             }
 
-            // update parent drop's radius and shed_mass
-
+            // Update parent parcel
             oldparent_radius                              = parcel_cloud.radius[passed_parcel_idx];
             parcel_cloud.radius[passed_parcel_idx]        = new_radius;
             parcel_cloud.radius_tm1[passed_parcel_idx]    = parcel_cloud.radius[passed_parcel_idx];
@@ -863,18 +974,15 @@ CONVERGE_UDF(spray_kh,
             parcel_cloud.shed_mass[passed_parcel_idx] =
                parcel_cloud.shed_mass[passed_parcel_idx] - (CONVERGE_precision_t)(num_kh)*new_parcel_mass;
 
-            //parent parcel's density has not changed, so updating sactive based on volume scaling
             parcel_cloud.sactive[passed_parcel_idx] =
                (parcel_cloud.num_drop[passed_parcel_idx]/old_num_drop) * CONVERGE_cube(new_radius / oldparent_radius) * parcel_cloud.sactive[passed_parcel_idx];
             parcel_cloud.sactive_tm1[passed_parcel_idx] = parcel_cloud.sactive[passed_parcel_idx];
          }
       }
-   }
-
    CONVERGE_LAGRANGE_Parcel_discretize_big(CONVERGE_get_int("lagrangian.evap_layers_per_drop"),
-                                           0,
-                                           passed_parcel_idx,
-                                           passed_spray_cloud);
+                                     0,
+                                     passed_parcel_idx,
+                                     passed_spray_cloud);
    destroy_tables(passed_species);
    CONVERGE_iterator_destroy(&psp_it);
 }
