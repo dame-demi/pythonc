@@ -1,8 +1,8 @@
 #include <CONVERGE/udf.h>
 // #include "user_header.h"
 
-CONVERGE_precision_t ambient_pres, ambient_temp;
-CONVERGE_precision_t MW_Fuel;
+CONVERGE_precision_t ambient_pres, ambient_temp, ambient_density;
+CONVERGE_precision_t MW_Fuel, MW_Air;
 CONVERGE_precision_t fuel_den, fuel_hvap, fuel_pvap, fuel_temp, fuel_cond, fuel_visc, noz_dia, noz_area, noz_len, vap_den, mdot, sigma, sound_speed;
 
 // Transport
@@ -73,14 +73,14 @@ CONVERGE_BEFORE_TRANSPORT(get_ambient_conditions,
 	CONVERGE_mpi_bcast(&ambient_pres,1,CONVERGE_DOUBLE,0);
 	CONVERGE_mpi_bcast(&ambient_temp,1,CONVERGE_DOUBLE,0);
 
-	printf (" rank = %d ambient_pres = %.12e ambient_temp = %.12e \n", rank, ambient_pres, ambient_temp);
-//
+	// printf (" rank = %d ambient_pres = %.12e ambient_temp = %.12e \n", rank, ambient_pres, ambient_temp);
+
         // SPECIES
         const CONVERGE_species_t species = CONVERGE_mesh_species(mesh);
-	const int num_total_species = CONVERGE_species_num_tot(species);
+		const int num_total_species = CONVERGE_species_num_tot(species);
         const int num_gas_species   = CONVERGE_species_num_gas(species);
 
-	printf (" number of total species = %d \n", num_total_species);
+	// printf (" number of total species = %d \n", num_total_species);
 
 	if (rank ==0)
 	{
@@ -92,14 +92,24 @@ CONVERGE_BEFORE_TRANSPORT(get_ambient_conditions,
 				MW_Fuel = CONVERGE_species_mw(species, isp);
 			}
 		}
+		for(int isp = 0; isp < num_total_species; isp++)
+		{
+			if(isp == CONVERGE_species_index(species, "N2"))
+			{
+				MW_Air = CONVERGE_species_mw(species, isp);
+			}
+		}
 	}
 
 	CONVERGE_mpi_bcast(&MW_Fuel,1,CONVERGE_DOUBLE,0);
 
-	printf (" MW_Fuel = %.12e \n", MW_Fuel);
-	printf("This is the end of get ambient conditions \n");
+	ambient_density = (ambient_pres) / (300 * ambient_temp); // in kg/m³
+	CONVERGE_mpi_bcast(&ambient_density,1,CONVERGE_DOUBLE,0);
 
-
+	// printf (" MW_Fuel = %.12e \n", MW_Fuel);
+	// printf(" MW_Air = %.12e \n", MW_Air);
+	// printf(" ambient_density = %.12e \n", ambient_density);
+	// printf("This is the end of get ambient conditions \n");
 
 	return;
 }

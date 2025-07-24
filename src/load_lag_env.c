@@ -13,75 +13,76 @@
 #include <CONVERGE/udf.h>
 
 int USER_LAG_VAR;
-   int USER_LAG_VARi;
-   int USER_LAG_VARv3;
-   int USER_LAG_VARv3b;
+int USER_LAG_VARi;
+int USER_LAG_VARv3;
+int USER_LAG_VARv3b;
 
-   // Lagrangian Data Field IDs
-   int LAGRANGIAN_REL_VEL;
-   int LAGRANGIAN_UPRIME;
-   int LAGRANGIAN_UU;
-   int LAGRANGIAN_ISBIG;
-   int LAGRANGIAN_FROM_INJECTOR;
-   int LAGRANGIAN_V_NU;
-   int LAGRANGIAN_V_SH;
-   int LAGRANGIAN_TEMP;
-   int LAGRANGIAN_TEMP_TM1;
-   int LAGRANGIAN_TEMP_STARM1;
-   int LAGRANGIAN_REY_NUM;
-   int LAGRANGIAN_REL_VEL_MAG;
-   int LAGRANGIAN_RADIUS;
-   int LAGRANGIAN_RADIUS_TM1;
-   int LAGRANGIAN_PARENT;
-   int LAGRANGIAN_DENSITY;
-   int LAGRANGIAN_DENSITY_TM1;
-   int LAGRANGIAN_MFRAC;
-   int LAGRANGIAN_MFRAC_TM1;
-   int LAGRANGIAN_NUM_DROP;
-   int LAGRANGIAN_SURF_TEN;
-   int LAGRANGIAN_VISCOSITY;
-   int LAGRANGIAN_DISTORT;
-   int LAGRANGIAN_DISTORT_DOT;
-   int LAGRANGIAN_SURF_TEMP;
-   int LAGRANGIAN_TBREAK_KH;
-   int LAGRANGIAN_SHED_NUM_DROP;
-   int LAGRANGIAN_SHED_MASS;
-   int LAGRANGIAN_SACTIVE;
-   int LAGRANGIAN_SACTIVE_TM1;
-   int LAGRANGIAN_DM_DT;
-   int LAGRANGIAN_DRDT;
-   int LAGRANGIAN_WALL_HEAT_EXCHANGE;
-   int LAGRANGIAN_L_RR;
-   int LAGRANGIAN_L_RC;
-   int LAGRANGIAN_L_TEMP1;
-   int LAGRANGIAN_L_TEMP2;
-   int LAGRANGIAN_JUST_HIT;
-   int LAGRANGIAN_JUST_HIT_LEIDEN;
-   int LAGRANGIAN_ISTHICK;
-   int LAGRANGIAN_FILM_SHED;
-   int LAGRANGIAN_XX;
-   int LAGRANGIAN_ON_TRIANGLE;
-   int LAGRANGIAN_FROM_NOZZLE;
-   int LAGRANGIAN_TBREAK_RT;
-   int LAGRANGIAN_SURF_TEMP_TM1;
-   int LAGRANGIAN_NUM_DROP_TM1;
-   int LAGRANGIAN_FILM_FLAG;
-   int LAGRANGIAN_FILM_ENERGY;
-   int LAGRANGIAN_T_TURB;
-   int LAGRANGIAN_T_TURB_ACCUM;
-   int LAGRANGIAN_FILM_THICKNESS;
-   int LAGRANGIAN_AREA_IN_FILM;
-   int LAGRANGIAN_FILM_THICKNESS_TM1;
-   int LAGRANGIAN_AREA_REDUCTION;
-   int LAGRANGIAN_TKE0;
-   int LAGRANGIAN_EPS0;
-   int LAGRANGIAN_LIFETIME;
-   int LAGRANGIAN_UU_TM1;
-   int LAGRANGIAN_FORCE_COEFFICIENT;
-   int LAGRANGIAN_DROP_GAS_SRC;
-   int LAGRANGIAN_GAS_DENSITY;
-   int LAGRANGIAN_FILM_ACCUM_BIT_FLAG;
-   int LAGRANGIAN_FILM_ACCUM_PLUS_BIT_FLAG;
+// Lagrangian Data Field IDs
+int LAGRANGIAN_REL_VEL;
+int LAGRANGIAN_UPRIME;
+int LAGRANGIAN_UU;
+int LAGRANGIAN_ISBIG;
+int LAGRANGIAN_FROM_INJECTOR;
+int LAGRANGIAN_V_NU;
+int LAGRANGIAN_V_SH;
+int LAGRANGIAN_TEMP;
+int LAGRANGIAN_TEMP_TM1;
+int LAGRANGIAN_TEMP_STARM1;
+int LAGRANGIAN_REY_NUM;
+int LAGRANGIAN_REL_VEL_MAG;
+int LAGRANGIAN_RADIUS;
+int LAGRANGIAN_RADIUS_TM1;
+int LAGRANGIAN_PARENT;
+int LAGRANGIAN_DENSITY;
+int LAGRANGIAN_DENSITY_TM1;
+int LAGRANGIAN_MFRAC;
+int LAGRANGIAN_MFRAC_TM1;
+int LAGRANGIAN_NUM_DROP;
+int LAGRANGIAN_SURF_TEN;
+int LAGRANGIAN_VISCOSITY;
+int LAGRANGIAN_DISTORT;
+int LAGRANGIAN_DISTORT_DOT;
+int LAGRANGIAN_SURF_TEMP;
+int LAGRANGIAN_TBREAK_KH;
+int LAGRANGIAN_SHED_NUM_DROP;
+int LAGRANGIAN_SHED_MASS;
+int LAGRANGIAN_SACTIVE;
+int LAGRANGIAN_SACTIVE_TM1;
+int LAGRANGIAN_DM_DT;
+int LAGRANGIAN_DRDT;
+int LAGRANGIAN_WALL_HEAT_EXCHANGE;
+int LAGRANGIAN_L_RR;
+int LAGRANGIAN_L_RC;
+int LAGRANGIAN_L_TEMP1;
+int LAGRANGIAN_L_TEMP2;
+int LAGRANGIAN_JUST_HIT;
+int LAGRANGIAN_JUST_HIT_LEIDEN;
+int LAGRANGIAN_ISTHICK;
+int LAGRANGIAN_FILM_SHED;
+int LAGRANGIAN_XX;
+int LAGRANGIAN_ON_TRIANGLE;
+int LAGRANGIAN_FROM_NOZZLE;
+int LAGRANGIAN_TBREAK_RT;
+int LAGRANGIAN_SURF_TEMP_TM1;
+int LAGRANGIAN_NUM_DROP_TM1;
+int LAGRANGIAN_FILM_FLAG;
+int LAGRANGIAN_FILM_ENERGY;
+int LAGRANGIAN_T_TURB;
+int LAGRANGIAN_T_TURB_ACCUM;
+int LAGRANGIAN_FILM_THICKNESS;
+int LAGRANGIAN_AREA_IN_FILM;
+int LAGRANGIAN_FILM_THICKNESS_TM1;
+int LAGRANGIAN_AREA_REDUCTION;
+int LAGRANGIAN_TKE0;
+int LAGRANGIAN_EPS0;
+int LAGRANGIAN_LIFETIME;
+int LAGRANGIAN_UU_TM1;
+int LAGRANGIAN_FORCE_COEFFICIENT;
+int LAGRANGIAN_DROP_GAS_SRC;
+int LAGRANGIAN_GAS_DENSITY;
+int LAGRANGIAN_FILM_ACCUM_BIT_FLAG;
+int LAGRANGIAN_FILM_ACCUM_PLUS_BIT_FLAG;
+// int LAGRANGIAN_TIME_BREAKUP; // New field for thermal breakup time
 
 // Nozzle Parameter IDs
 int NOZZLE_AXIAL_VEC;
@@ -226,13 +227,13 @@ CONVERGE_ONLOAD(spray_env, IN(CONVERGE_VOID))
    // Register a simple int data parcel field
    CONVERGE_variable_register("user_lag_var_i", CONVERGE_INT, DEFAULT_PARCEL_VARIABLE_SETTINGS, END_ARG_LIST);
 
-   // User defined component names, overrides automatic nameing for CONVERGE_VEC3
+   // User defined component names, overrides automatic naming for CONVERGE_VEC3
    const char *user_lag_var_v3_comp_names[] = {"user_lag_var0", "user_lag_var1", "user_lag_var2"};
    CONVERGE_variable_register(
       "user_lag_var_v3",
       CONVERGE_DOUBLE,
       DEFAULT_PARCEL_VARIABLE_SETTINGS,
-      // Double wtih dimension 3 may also be simply CONVERGE_VEC3.
+      // Double with dimension 3 may also be simply CONVERGE_VEC3.
       // The purpose of specifying the dimension manually is to allow for component names to be specified separately
       "dimension",
       3,
@@ -242,13 +243,17 @@ CONVERGE_ONLOAD(spray_env, IN(CONVERGE_VOID))
       END_ARG_LIST);
    CONVERGE_variable_register(
       "user_lag_var_v3b",
-      // CONVERGE_VEC3 will automattically append _1/_2/_3 to the end of the variable name
+      // CONVERGE_VEC3 will automatically append _1/_2/_3 to the end of the variable name
       CONVERGE_VEC3,
       DEFAULT_PARCEL_VARIABLE_SETTINGS,
       // The purpose of specifying the dimension manually here is to demonstrate it is permitted to mix dimension with any CONVERGE_APIType
       "dimension",
       3,
       END_ARG_LIST);
+
+   // Register time_breakup field
+  // CONVERGE_variable_register("time_breakup", CONVERGE_INT, DEFAULT_PARCEL_VARIABLE_SETTINGS, END_ARG_LIST);
+
    // Get dynamic IDs to Lagrangian Cloud fields
    USER_LAG_VAR    = CONVERGE_lagrangian_field_id("user_lag_var");
    USER_LAG_VARi   = CONVERGE_lagrangian_field_id("user_lag_var_i");
@@ -286,16 +291,16 @@ CONVERGE_ONLOAD(spray_env, IN(CONVERGE_VOID))
    LAGRANGIAN_MFRAC              = CONVERGE_lagrangian_field_id("LAGRANGIAN_MFRAC");
    LAGRANGIAN_MFRAC_TM1          = CONVERGE_lagrangian_field_id("LAGRANGIAN_MFRAC_TM1");
    LAGRANGIAN_NUM_DROP           = CONVERGE_lagrangian_field_id("LAGRANGIAN_NUM_DROP");
+   LAGRANGIAN_SURF_TEN           = CONVERGE_lagrangian_field_id("LAGRANGIAN_SURF_TEN");
+   LAGRANGIAN_VISCOSITY          = CONVERGE_lagrangian_field_id("LAGRANGIAN_VISCOSITY");
+   LAGRANGIAN_DISTORT            = CONVERGE_lagrangian_field_id("LAGRANGIAN_DISTORT");
+   LAGRANGIAN_DISTORT_DOT        = CONVERGE_lagrangian_field_id("LAGRANGIAN_DISTORT_DOT");
    LAGRANGIAN_SURF_TEMP          = CONVERGE_lagrangian_field_id("LAGRANGIAN_SURF_TEMP");
    LAGRANGIAN_TBREAK_KH          = CONVERGE_lagrangian_field_id("LAGRANGIAN_TBREAK_KH");
    LAGRANGIAN_SHED_NUM_DROP      = CONVERGE_lagrangian_field_id("LAGRANGIAN_SHED_NUM_DROP");
    LAGRANGIAN_SHED_MASS          = CONVERGE_lagrangian_field_id("LAGRANGIAN_SHED_MASS");
    LAGRANGIAN_SACTIVE            = CONVERGE_lagrangian_field_id("LAGRANGIAN_SACTIVE");
    LAGRANGIAN_SACTIVE_TM1        = CONVERGE_lagrangian_field_id("LAGRANGIAN_SACTIVE_TM1");
-   LAGRANGIAN_SURF_TEN           = CONVERGE_lagrangian_field_id("LAGRANGIAN_SURF_TEN");
-   LAGRANGIAN_VISCOSITY          = CONVERGE_lagrangian_field_id("LAGRANGIAN_VISCOSITY");
-   LAGRANGIAN_DISTORT            = CONVERGE_lagrangian_field_id("LAGRANGIAN_DISTORT");
-   LAGRANGIAN_DISTORT_DOT        = CONVERGE_lagrangian_field_id("LAGRANGIAN_DISTORT_DOT");
    LAGRANGIAN_DM_DT              = CONVERGE_lagrangian_field_id("LAGRANGIAN_DM_DT");
    LAGRANGIAN_DRDT               = CONVERGE_lagrangian_field_id("LAGRANGIAN_DRDT");
    LAGRANGIAN_WALL_HEAT_EXCHANGE = CONVERGE_lagrangian_field_id("LAGRANGIAN_WALL_HEAT_EXCHANGE");
@@ -311,18 +316,19 @@ CONVERGE_ONLOAD(spray_env, IN(CONVERGE_VOID))
    LAGRANGIAN_T_TURB             = CONVERGE_lagrangian_field_id("LAGRANGIAN_T_TURB");
    LAGRANGIAN_T_TURB_ACCUM       = CONVERGE_lagrangian_field_id("LAGRANGIAN_T_TURB_ACCUM");
    LAGRANGIAN_FILM_THICKNESS     = CONVERGE_lagrangian_field_id("LAGRANGIAN_FILM_THICKNESS");
+   LAGRANGIAN_AREA_IN_FILM       = CONVERGE_lagrangian_field_id("LAGRANGIAN_AREA_IN_FILM");
+   LAGRANGIAN_FILM_THICKNESS_TM1 = CONVERGE_lagrangian_field_id("LAGRANGIAN_FILM_THICKNESS_TM1");
    LAGRANGIAN_AREA_REDUCTION     = CONVERGE_lagrangian_field_id("LAGRANGIAN_AREA_REDUCTION");
    LAGRANGIAN_TKE0               = CONVERGE_lagrangian_field_id("LAGRANGIAN_TKE0");
    LAGRANGIAN_EPS0               = CONVERGE_lagrangian_field_id("LAGRANGIAN_EPS0");
    LAGRANGIAN_LIFETIME           = CONVERGE_lagrangian_field_id("LAGRANGIAN_LIFETIME");
+   LAGRANGIAN_UU_TM1             = CONVERGE_lagrangian_field_id("LAGRANGIAN_UU_TM1");
    LAGRANGIAN_FORCE_COEFFICIENT  = CONVERGE_lagrangian_field_id("LAGRANGIAN_FORCE_COEFFICIENT");
    LAGRANGIAN_DROP_GAS_SRC       = CONVERGE_lagrangian_field_id("LAGRANGIAN_DROP_GAS_SRC");
-
-   LAGRANGIAN_FILM_THICKNESS_TM1 = CONVERGE_lagrangian_field_id("LAGRANGIAN_FILM_THICKNESS_TM1");
-   LAGRANGIAN_AREA_IN_FILM       = CONVERGE_lagrangian_field_id("LAGRANGIAN_AREA_IN_FILM");
-
+   LAGRANGIAN_GAS_DENSITY        = CONVERGE_lagrangian_field_id("LAGRANGIAN_GAS_DENSITY");
    LAGRANGIAN_FILM_ACCUM_BIT_FLAG = CONVERGE_lagrangian_field_id("LAGRANGIAN_FILM_ACCUM_BIT_FLAG");
    LAGRANGIAN_FILM_ACCUM_PLUS_BIT_FLAG = CONVERGE_lagrangian_field_id("LAGRANGIAN_FILM_ACCUM_PLUS_BIT_FLAG");
+   // LAGRANGIAN_TIME_BREAKUP = CONVERGE_lagrangian_field_id("LAGRANGIAN_TIME_BREAKUP");
 
    // Get Dynamic IDs for Injectors parameters
    INJECTOR_MFRAC                        = CONVERGE_get_parameter_id("injector.mfrac");
@@ -532,14 +538,16 @@ void load_user_cloud(struct ParcelCloud *parcel_cloud_loc, CONVERGE_cloud_t c)
    parcel_cloud_loc->tke0     = (CONVERGE_precision_t *)CONVERGE_cloud_get_field_data(c, LAGRANGIAN_TKE0);
    parcel_cloud_loc->eps0     = (CONVERGE_precision_t *)CONVERGE_cloud_get_field_data(c, LAGRANGIAN_EPS0);
    parcel_cloud_loc->lifetime = (CONVERGE_precision_t *)CONVERGE_cloud_get_field_data(c, LAGRANGIAN_LIFETIME);
-   parcel_cloud_loc->force_coefficient = 
+   parcel_cloud_loc->force_coefficient =
       (CONVERGE_precision_t *)CONVERGE_cloud_get_field_data(c, LAGRANGIAN_FORCE_COEFFICIENT);
-   parcel_cloud_loc->film_accum_bit_flag = 
+   // parcel_cloud_loc->time_breakup = (CONVERGE_precision_t *)CONVERGE_cloud_get_field_data(c, LAGRANGIAN_TIME_BREAKUP); // Load new field
+
+   parcel_cloud_loc->film_accum_bit_flag =
       (unsigned long long*)CONVERGE_cloud_get_field_data(c, LAGRANGIAN_FILM_ACCUM_BIT_FLAG);
-   parcel_cloud_loc->film_accum_plus_bit_flag = 
+   parcel_cloud_loc->film_accum_plus_bit_flag =
       (unsigned int*)CONVERGE_cloud_get_field_data(c, LAGRANGIAN_FILM_ACCUM_PLUS_BIT_FLAG);
 
-   if(CONVERGE_cloud_type(c) == LAGRANGIAN_FILM)
+   if (CONVERGE_cloud_type(c) == LAGRANGIAN_FILM)
    {
       parcel_cloud_loc->film_thickness_tm1 =
          (CONVERGE_precision_t *)CONVERGE_cloud_get_field_data(c, LAGRANGIAN_FILM_THICKNESS_TM1);
@@ -549,12 +557,11 @@ void load_user_cloud(struct ParcelCloud *parcel_cloud_loc, CONVERGE_cloud_t c)
    else
    {
       parcel_cloud_loc->film_thickness_tm1 = NULL;
-      parcel_cloud_loc->area_in_film       = NULL;
+      parcel_cloud_loc->area_in_film = NULL;
    }
 }
 
 /* load urea information*/
-
 void load_urea_parameters(struct UreaInfo *urea_info)
 {
    urea_info->isp_nh3_urea             = CONVERGE_get_int("urea_in.isp_nh3_urea");
@@ -563,8 +570,8 @@ void load_urea_parameters(struct UreaInfo *urea_info)
    urea_info->isp_cn_urea              = CONVERGE_get_int("urea_in.isp_cn_urea");
    urea_info->isp_nh2_urea             = CONVERGE_get_int("urea_in.isp_nh2_urea");
    urea_info->isp_water_parcel         = CONVERGE_get_int("urea_in.isp_water_parcel");
-   urea_info->isp_urea_parcel          = CONVERGE_get_int("urea_in.isp_urea_parcel");
-   urea_info->isp_urea_parcel_sl       = CONVERGE_get_int("urea_in.isp_urea_parcel_sl");
+   urea_info->isp_urea_parcel         = CONVERGE_get_int("urea_in.isp_urea_parcel");
+   urea_info->isp_urea_sl             = CONVERGE_get_int("urea_in.isp_urea_parcel_sl");
    urea_info->urea_a                   = CONVERGE_get_double("urea_in.urea_a");
    urea_info->urea_ea                  = CONVERGE_get_double("urea_in.urea_ea");
    urea_info->gamma_scr                = CONVERGE_get_double("urea_in.gamma_scr");
@@ -576,11 +583,11 @@ void load_urea_dd_parameters(struct UreaInfo *urea_info)
    urea_info->num_react_parcel_species = CONVERGE_get_int("urea_in.num_react_parcel_species");
    urea_info->num_react_gas_species    = CONVERGE_get_int("urea_in.num_react_gas_species");
    urea_info->num_reactions            = CONVERGE_get_int("urea_in.num_reactions");
-   urea_info->isp_nh3                  = CONVERGE_get_int("urea_in.isp_nh3");//gas
-   urea_info->isp_hnco                 = CONVERGE_get_int("urea_in.isp_hnco");//gas
-   urea_info->isp_h2o_aq               = CONVERGE_get_int("urea_in.isp_h2o_aq");//aqueous
-   urea_info->isp_urea_aq              = CONVERGE_get_int("urea_in.isp_urea_aq");//aqueous
-   urea_info->isp_urea_sl              = CONVERGE_get_int("urea_in.isp_urea_sl");//solid
+   urea_info->isp_nh3                  = CONVERGE_get_int("urea_in.isp_nh3");
+   urea_info->isp_hnco                 = CONVERGE_get_int("urea_in.isp_hnco");
+   urea_info->isp_h2o_aq               = CONVERGE_get_int("urea_in.isp_h2o_aq");
+   urea_info->isp_urea_aq              = CONVERGE_get_int("urea_in.isp_urea_aq");
+   urea_info->isp_urea_sl              = CONVERGE_get_int("urea_in.isp_urea_sl");
    urea_info->scaling_factor_a         = CONVERGE_get_double("urea_in.scaling_factor_a");
    urea_info->scaling_factor_e         = CONVERGE_get_double("urea_in.scaling_factor_e");
    urea_info->mw_h2o                   = CONVERGE_get_double("urea_in.mw_h2o");
